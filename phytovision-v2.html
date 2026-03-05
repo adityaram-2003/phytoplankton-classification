@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhytoVision — v9 Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+/* ════════════════════════════════════════════
+   TOKENS + RESET
+════════════════════════════════════════════ */
+:root{
+  --ink:     #020c18;
+  --deep:    #040f1e;
+  --navy:    #061525;
+  --mid:     #091d30;
+  --rim:     #0d2840;
+  --border:  rgba(0,200,255,0.12);
+  --border2: rgba(0,200,255,0.22);
+
+  --c1: #00d4ff;   /* primary cyan */
+  --c2: #00ffc3;   /* mint */
+  --c3: #005fff;   /* electric blue */
+  --c4: #ff4d6d;   /* coral warning */
+  --c5: #a78bfa;   /* violet */
+  --c6: #ffb347;   /* amber */
+
+  --glass-bg:     rgba(6,21,37,0.55);
+  --glass-bg2:    rgba(0,212,255,0.06);
+  --glass-border: rgba(0,212,255,0.18);
+  --glass-shadow: 0 8px 48px rgba(0,0,0,0.5), 0 1px 0 rgba(0,212,255,0.12) inset;
+
+  --glow-c1: 0 0 30px rgba(0,212,255,0.25), 0 0 80px rgba(0,212,255,0.08);
+  --glow-c2: 0 0 30px rgba(0,255,195,0.25), 0 0 80px rgba(0,255,195,0.08);
+
+  --sidebar: 240px;
+  --r: 16px;
+  --r-sm: 10px;
+  --r-lg: 24px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Outfit',sans-serif;
+  background:var(--ink);
+  color:#c8e6f5;
+  display:flex;
+  min-height:100vh;
+  overflow-x:hidden;
+  cursor:none;
+}
+
+/* ── Custom cursor ── */
+#cursor{
+  position:fixed;width:12px;height:12px;border-radius:50%;
+  background:var(--c1);pointer-events:none;z-index:9999;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 16px var(--c1), 0 0 32px rgba(0,212,255,0.4);
+  transition:transform 0.08s, width 0.2s, height 0.2s, background 0.2s;
+  mix-blend-mode:screen;
+}
+#cursor-ring{
+  position:fixed;width:36px;height:36px;border-radius:50%;
+  border:1px solid rgba(0,212,255,0.45);pointer-events:none;z-index:9998;
+  transform:translate(-50%,-50%);
+  transition:transform 0.18s cubic-bezier(0.22,1,0.36,1), width 0.3s, height 0.3s, border-color 0.3s;
+}
+body:has(a:hover) #cursor,
+body:has(button:hover) #cursor{width:20px;height:20px;background:var(--c2);}
+body:has(a:hover) #cursor-ring,
+body:has(button:hover) #cursor-ring{width:52px;height:52px;border-color:rgba(0,255,195,0.5);}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--ink)}
+::-webkit-scrollbar-thumb{background:var(--rim);border-radius:99px}
+
+/* ════════════════════════════════════════════
+   AMBIENT BACKGROUND
+════════════════════════════════════════════ */
+#ambient{
+  position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;
+}
+.orb{
+  position:absolute;border-radius:50%;filter:blur(80px);
+  animation:orb-drift 18s ease-in-out infinite alternate;
+}
+.orb1{width:600px;height:600px;background:radial-gradient(circle,rgba(0,95,255,0.12),transparent 70%);top:-200px;left:-100px;}
+.orb2{width:500px;height:500px;background:radial-gradient(circle,rgba(0,212,255,0.09),transparent 70%);top:40%;right:-150px;animation-delay:-7s;animation-duration:22s}
+.orb3{width:400px;height:400px;background:radial-gradient(circle,rgba(0,255,195,0.07),transparent 70%);bottom:-100px;left:30%;animation-delay:-13s;animation-duration:16s}
+@keyframes orb-drift{
+  0%{transform:translate(0,0) scale(1)}
+  100%{transform:translate(40px,30px) scale(1.08)}
+}
+#grid-bg{
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
+  background-size:60px 60px;
+  mask-image:radial-gradient(ellipse at 50% 50%, black 20%, transparent 80%);
+}
+
+/* ════════════════════════════════════════════
+   SIDEBAR
+════════════════════════════════════════════ */
+.sidebar{
+  width:var(--sidebar);min-height:100vh;position:fixed;left:0;top:0;
+  z-index:100;overflow-y:auto;
+  background:var(--glass-bg);
+  backdrop-filter:blur(24px) saturate(180%);
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  border-right:1px solid var(--glass-border);
+  display:flex;flex-direction:column;padding:32px 0 24px;
+}
+.sidebar::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--c1),transparent);
+  opacity:0.5;
+}
+
+.sb-logo{padding:0 24px 28px;border-bottom:1px solid var(--border);}
+.sb-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+  color:var(--c1);background:rgba(0,212,255,0.1);
+  border:1px solid rgba(0,212,255,0.25);padding:4px 10px;border-radius:6px;
+  margin-bottom:12px;
+}
+.sb-pulse{width:5px;height:5px;border-radius:50%;background:var(--c2);
+  animation:pulse 2s ease-in-out infinite;box-shadow:0 0 6px var(--c2);}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+.sb-title{font-size:24px;font-weight:800;letter-spacing:-1px;color:#fff;line-height:1}
+.sb-title span{
+  background:linear-gradient(135deg,var(--c1),var(--c2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.sb-sub{font-size:9px;color:rgba(0,212,255,0.4);letter-spacing:2px;margin-top:5px;
+  font-family:'JetBrains Mono',monospace;}
+
+.sb-section{font-size:9px;font-weight:700;letter-spacing:2.5px;color:rgba(0,212,255,0.3);
+  text-transform:uppercase;padding:20px 24px 8px;}
+.nav-link{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 24px;text-decoration:none;
+  font-size:12.5px;font-weight:400;color:rgba(200,230,245,0.5);
+  border-left:2px solid transparent;
+  transition:all 0.25s cubic-bezier(0.22,1,0.36,1);
+  position:relative;overflow:hidden;
+}
+.nav-link::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(0,212,255,0.08),transparent);
+  opacity:0;transition:opacity 0.3s;
+}
+.nav-link:hover,.nav-link.active{
+  color:var(--c1);border-left-color:var(--c1);
+}
+.nav-link:hover::before,.nav-link.active::before{opacity:1;}
+.nav-icon-wrap{
+  width:30px;height:30px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,212,255,0.06);border:1px solid var(--border);
+  font-size:14px;flex-shrink:0;
+  transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1), background 0.3s, box-shadow 0.3s;
+}
+.nav-link:hover .nav-icon-wrap,.nav-link.active .nav-icon-wrap{
+  transform:scale(1.18) rotate(-4deg);
+  background:rgba(0,212,255,0.14);
+  box-shadow:0 0 14px rgba(0,212,255,0.25);
+}
+.nav-chip{
+  margin-left:auto;font-size:9px;font-weight:700;
+  padding:2px 7px;border-radius:99px;
+  background:rgba(0,212,255,0.08);color:rgba(0,212,255,0.5);
+  font-family:'JetBrains Mono',monospace;
+  border:1px solid rgba(0,212,255,0.15);
+}
+.nav-link.active .nav-chip{background:rgba(0,212,255,0.15);color:var(--c1);}
+
+.sb-foot{margin-top:auto;padding:20px 24px 0;border-top:1px solid var(--border);}
+.sb-foot-mono{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,212,255,0.35);}
+.sb-foot-mono b{color:var(--c1);}
+
+/* ════════════════════════════════════════════
+   MAIN
+════════════════════════════════════════════ */
+.main{
+  margin-left:var(--sidebar);flex:1;
+  padding:48px 52px;
+  position:relative;z-index:1;
+  max-width:calc(100vw - var(--sidebar));
+}
+
+/* ════════════════════════════════════════════
+   GLASS CARD
+════════════════════════════════════════════ */
+.glass{
+  background:var(--glass-bg);
+  backdrop-filter:blur(20px) saturate(160%);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);
+  border:1px solid var(--glass-border);
+  border-radius:var(--r);
+  box-shadow:var(--glass-shadow);
+  position:relative;overflow:hidden;
+}
+.glass::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent 0%,rgba(0,212,255,0.3) 50%,transparent 100%);
+}
+.glass-hover{transition:transform 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.4s, border-color 0.4s;}
+.glass-hover:hover{
+  transform:translateY(-3px);
+  border-color:rgba(0,212,255,0.3);
+  box-shadow:var(--glass-shadow), 0 20px 60px rgba(0,0,0,0.4), 0 0 40px rgba(0,212,255,0.08);
+}
+
+/* Tilt cards (JS) */
+.tilt{transform-style:preserve-3d;transform:perspective(1000px);}
+
+/* ════════════════════════════════════════════
+   HERO
+════════════════════════════════════════════ */
+.hero{margin-bottom:48px;padding-top:8px;}
+.hero-chips{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+.chip{
+  font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  padding:5px 12px;border-radius:99px;display:inline-flex;align-items:center;gap:6px;
+  transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s;
+}
+.chip:hover{transform:translateY(-2px) scale(1.04);}
+.chip-c1{background:rgba(0,212,255,0.1);color:var(--c1);border:1px solid rgba(0,212,255,0.25);}
+.chip-c2{background:rgba(0,255,195,0.1);color:var(--c2);border:1px solid rgba(0,255,195,0.25);}
+.chip-c3{background:rgba(0,95,255,0.1);color:#6fa3ff;border:1px solid rgba(0,95,255,0.25);}
+.chip-c5{background:rgba(167,139,250,0.1);color:var(--c5);border:1px solid rgba(167,139,250,0.25);}
+.chip-c4{background:rgba(255,77,109,0.1);color:var(--c4);border:1px solid rgba(255,77,109,0.25);}
+.chip-c6{background:rgba(255,179,71,0.1);color:var(--c6);border:1px solid rgba(255,179,71,0.25);}
+
+.hero-title{
+  font-size:52px;font-weight:900;letter-spacing:-2.5px;
+  color:#fff;line-height:1.0;margin-bottom:14px;
+}
+.hero-title .grad{
+  background:linear-gradient(120deg,var(--c1) 0%,var(--c2) 50%,var(--c3) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:grad-shift 4s ease-in-out infinite alternate;
+  background-size:200%;
+}
+@keyframes grad-shift{0%{background-position:0%}100%{background-position:100%}}
+.hero-sub{
+  font-size:14px;color:rgba(200,230,245,0.55);font-weight:300;
+  max-width:580px;line-height:1.75;
+}
+
+/* ════════════════════════════════════════════
+   STATS ROW
+════════════════════════════════════════════ */
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:48px;}
+.stat{
+  padding:22px 20px;
+  cursor:default;
+}
+.stat-accent-line{
+  position:absolute;bottom:0;left:20%;right:20%;height:1px;
+  background:var(--c1);filter:blur(1px);opacity:0.3;
+  transition:opacity 0.3s,left 0.3s,right 0.3s;
+}
+.stat:hover .stat-accent-line{opacity:0.7;left:10%;right:10%;}
+.stat-icon{
+  width:38px;height:38px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;margin-bottom:14px;
+  transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.35s;
+}
+.stat:hover .stat-icon{transform:translateY(-4px) scale(1.1) rotate(-6deg);}
+.si-c1{background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);}
+.si-c2{background:rgba(0,255,195,0.1);border:1px solid rgba(0,255,195,0.2);}
+.si-c3{background:rgba(0,95,255,0.1);border:1px solid rgba(0,95,255,0.2);}
+.si-c5{background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2);}
+.si-c6{background:rgba(255,179,71,0.1);border:1px solid rgba(255,179,71,0.2);}
+.stat:hover .si-c1{box-shadow:0 8px 24px rgba(0,212,255,0.25);}
+.stat:hover .si-c2{box-shadow:0 8px 24px rgba(0,255,195,0.25);}
+.stat-lbl{font-size:9.5px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(200,230,245,0.35);margin-bottom:6px;}
+.stat-val{
+  font-size:34px;font-weight:800;letter-spacing:-1.5px;color:#fff;
+  font-variant-numeric:tabular-nums;line-height:1;
+  font-family:'Outfit',sans-serif;
+}
+.stat-unit{font-size:14px;color:rgba(200,230,245,0.4);font-weight:400;}
+.stat-note{font-size:10px;color:rgba(200,230,245,0.3);margin-top:6px;}
+.stat-note.up{color:var(--c2);}
+
+/* ════════════════════════════════════════════
+   SECTION HEADERS
+════════════════════════════════════════════ */
+.section{margin-bottom:64px;scroll-margin-top:32px;}
+.sec-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:28px;}
+.sec-num{
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;
+  color:var(--c1);background:rgba(0,212,255,0.08);
+  border:1px solid rgba(0,212,255,0.2);border-radius:6px;
+  padding:4px 8px;flex-shrink:0;margin-top:3px;
+}
+.sec-title{font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.5px;}
+.sec-sub{font-size:12px;color:rgba(200,230,245,0.35);margin-top:3px;font-weight:300;}
+.sec-actions{margin-left:auto;display:flex;gap:8px;align-items:center;}
+
+/* ════════════════════════════════════════════
+   BUTTONS
+════════════════════════════════════════════ */
+.btn{
+  font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;
+  letter-spacing:0.5px;padding:8px 16px;border-radius:8px;cursor:pointer;
+  border:1px solid var(--rim);background:transparent;color:rgba(200,230,245,0.5);
+  transition:all 0.25s cubic-bezier(0.22,1,0.36,1);
+  position:relative;overflow:hidden;
+}
+.btn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(0,212,255,0.15),transparent);
+  opacity:0;transition:opacity 0.3s;
+}
+.btn:hover{color:var(--c1);border-color:rgba(0,212,255,0.4);transform:translateY(-1px);}
+.btn:hover::before{opacity:1;}
+.btn:active{transform:translateY(0px) scale(0.98);}
+.btn-glow{
+  background:rgba(0,212,255,0.1);color:var(--c1);
+  border-color:rgba(0,212,255,0.3);
+  box-shadow:0 0 20px rgba(0,212,255,0.15);
+}
+.btn-glow:hover{
+  background:rgba(0,212,255,0.18);
+  box-shadow:0 0 32px rgba(0,212,255,0.3);
+}
+
+/* ════════════════════════════════════════════
+   CARD INNER PARTS
+════════════════════════════════════════════ */
+.card-inner{padding:24px;}
+.card-title{
+  font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  color:rgba(0,212,255,0.6);margin-bottom:18px;
+  display:flex;align-items:center;gap:8px;
+}
+.card-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--c1);
+  box-shadow:0 0 8px var(--c1);
+  animation:pulse 2s ease-in-out infinite;
+}
+.card-dot.c2{background:var(--c2);box-shadow:0 0 8px var(--c2);}
+.card-dot.c5{background:var(--c5);box-shadow:0 0 8px var(--c5);}
+.card-dot.c6{background:var(--c6);box-shadow:0 0 8px var(--c6);}
+.card-dot.c4{background:var(--c4);box-shadow:0 0 8px var(--c4);}
+
+/* ════════════════════════════════════════════
+   LAYOUTS
+════════════════════════════════════════════ */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+.g65{display:grid;grid-template-columns:1.7fr 1fr;gap:20px;}
+.g35{display:grid;grid-template-columns:1fr 1.7fr;gap:20px;}
+.divider{height:1px;background:linear-gradient(90deg,rgba(0,212,255,0.15),transparent);margin:56px 0;}
+
+/* ════════════════════════════════════════════
+   CLASS DISTRIBUTION BARS
+════════════════════════════════════════════ */
+.cls-row{
+  display:flex;align-items:center;gap:14px;
+  padding:9px 0;border-bottom:1px solid rgba(0,212,255,0.06);
+  transition:transform 0.2s;
+}
+.cls-row:hover{transform:translateX(4px);}
+.cls-row:last-child{border-bottom:none;}
+.cls-name{
+  font-size:12px;color:rgba(200,230,245,0.7);width:170px;flex-shrink:0;
+  display:flex;align-items:center;gap:8px;
+}
+.cls-swatch{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.cls-track{flex:1;height:5px;background:rgba(0,212,255,0.07);border-radius:99px;overflow:hidden;}
+.cls-fill{height:100%;border-radius:99px;transition:width 1.2s cubic-bezier(0.22,1,0.36,1);}
+.cls-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(200,230,245,0.4);width:50px;text-align:right;}
+
+/* ════════════════════════════════════════════
+   METRICS TABLE
+════════════════════════════════════════════ */
+.mt{width:100%;border-collapse:collapse;}
+.mt th{
+  font-size:9px;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(200,230,245,0.25);font-weight:700;
+  padding:10px 12px;border-bottom:1px solid rgba(0,212,255,0.08);
+  text-align:left;
+}
+.mt td{padding:10px 12px;border-bottom:1px solid rgba(0,212,255,0.05);font-size:12px;}
+.mt tr:last-child td{border-bottom:none;}
+.mt tr:hover td{background:rgba(0,212,255,0.03);}
+.mt-bar-bg{height:4px;background:rgba(0,212,255,0.08);border-radius:99px;overflow:hidden;width:72px;}
+.mt-bar-fill{height:100%;border-radius:99px;}
+
+/* ════════════════════════════════════════════
+   CONFUSION MATRIX
+════════════════════════════════════════════ */
+.cm-wrap{overflow-x:auto;padding-bottom:4px;}
+.cm-cell{
+  border-radius:5px;display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;
+  transition:transform 0.15s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.15s;
+  position:relative;cursor:default;
+}
+.cm-cell:hover{transform:scale(1.15);z-index:10;box-shadow:0 0 20px rgba(0,212,255,0.3);}
+.cm-row-lbl,.cm-col-lbl{
+  font-size:8px;color:rgba(200,230,245,0.3);
+  font-family:'JetBrains Mono',monospace;
+  display:flex;align-items:center;justify-content:flex-end;
+}
+.cm-col-lbl{
+  writing-mode:vertical-rl;transform:rotate(180deg);
+  justify-content:flex-start;padding-bottom:4px;
+  max-height:65px;overflow:hidden;
+}
+
+/* ════════════════════════════════════════════
+   ARCHITECTURE STRIP
+════════════════════════════════════════════ */
+.arch-strip{display:flex;align-items:center;gap:0;overflow-x:auto;padding:4px 0 8px;}
+.arch-block{
+  background:rgba(0,212,255,0.04);
+  border:1px solid rgba(0,212,255,0.12);
+  border-radius:10px;padding:12px 16px;flex-shrink:0;
+  text-align:center;min-width:100px;
+  transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s, border-color 0.3s, background 0.3s;
+  cursor:default;
+}
+.arch-block:hover{
+  transform:translateY(-5px) scale(1.04);
+  box-shadow:0 12px 32px rgba(0,0,0,0.3), 0 0 20px rgba(0,212,255,0.12);
+  border-color:rgba(0,212,255,0.3);
+  background:rgba(0,212,255,0.08);
+  z-index:5;
+}
+.arch-hl{
+  border-color:rgba(0,212,255,0.35) !important;
+  background:rgba(0,212,255,0.08) !important;
+}
+.arch-block-n{font-size:11px;font-weight:600;color:rgba(200,230,245,0.8);}
+.arch-block-d{font-size:9px;color:rgba(200,230,245,0.35);margin-top:3px;font-family:'JetBrains Mono',monospace;}
+.arch-arr{color:rgba(0,212,255,0.3);font-size:16px;padding:0 6px;flex-shrink:0;}
+
+/* ════════════════════════════════════════════
+   STAGE BADGES
+════════════════════════════════════════════ */
+.stage-strip{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+.stage-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:10px;font-weight:500;color:rgba(200,230,245,0.45);
+  background:rgba(0,0,0,0.3);border:1px solid var(--rim);
+  padding:5px 12px;border-radius:8px;
+  transition:color 0.2s,border-color 0.2s,transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+  cursor:default;
+}
+.stage-badge:hover{color:rgba(200,230,245,0.8);border-color:rgba(0,212,255,0.25);transform:translateY(-2px);}
+.stage-dot{width:7px;height:7px;border-radius:50%;}
+
+/* ════════════════════════════════════════════
+   AWAITING / SKELETON
+════════════════════════════════════════════ */
+.await{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;min-height:220px;padding:36px;text-align:center;
+  position:relative;
+}
+.await::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;
+  background:repeating-linear-gradient(
+    -55deg,transparent,transparent 12px,
+    rgba(0,212,255,0.018) 12px,rgba(0,212,255,0.018) 24px
+  );
+}
+.await-icon{
+  font-size:42px;opacity:0.25;
+  animation:float 3.5s ease-in-out infinite;
+}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.await-tag{
+  font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--c6);background:rgba(255,179,71,0.08);
+  border:1px solid rgba(255,179,71,0.2);padding:4px 12px;border-radius:6px;
+}
+.await-title{font-size:14px;font-weight:700;color:rgba(200,230,245,0.7);}
+.await-sub{font-size:12px;color:rgba(200,230,245,0.3);max-width:300px;line-height:1.65;font-weight:300;}
+.await-fields{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;}
+.await-field{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:rgba(200,230,245,0.4);
+  background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.12);
+  padding:4px 10px;border-radius:6px;
+  transition:color 0.2s,border-color 0.2s,transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.await-field:hover{color:var(--c1);border-color:rgba(0,212,255,0.3);transform:translateY(-2px);}
+
+/* shimmer bar */
+.skel{
+  height:8px;border-radius:99px;
+  background:linear-gradient(90deg,rgba(0,212,255,0.06) 25%,rgba(0,212,255,0.12) 50%,rgba(0,212,255,0.06) 75%);
+  background-size:200% 100%;
+  animation:shimmer 2s ease-in-out infinite;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* hist skeleton bars */
+.hist-wrap{display:flex;align-items:flex-end;gap:5px;height:110px;padding:0 2px;}
+.hist-bar{
+  flex:1;border-radius:4px 4px 0 0;
+  border:1px solid rgba(0,212,255,0.15);
+  animation:shimmer 2s ease-in-out infinite;
+  background:linear-gradient(180deg,rgba(0,212,255,0.1),rgba(0,212,255,0.03));
+  background-size:100% 200%;
+}
+
+/* ════════════════════════════════════════════
+   MAP
+════════════════════════════════════════════ */
+.map-box{height:280px;border-radius:var(--r);overflow:hidden;position:relative;}
+.map-grid-overlay{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,212,255,0.05) 1px,transparent 1px);
+  background-size:40px 40px;
+}
+.map-dot-wrap{position:absolute;}
+.map-dot{
+  width:10px;height:10px;border-radius:50%;
+  background:var(--c1);box-shadow:0 0 14px var(--c1);
+  animation:map-pulse 2.5s ease-in-out infinite;
+  position:relative;
+}
+.map-dot::after{
+  content:'';position:absolute;inset:-7px;border-radius:50%;
+  border:1px solid rgba(0,212,255,0.35);
+  animation:ring-out 2.5s ease-out infinite;
+}
+@keyframes map-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+@keyframes ring-out{0%{transform:scale(1);opacity:0.5}100%{transform:scale(2.8);opacity:0}}
+.map-label-t{
+  position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--c1);
+  white-space:nowrap;
+}
+
+/* ════════════════════════════════════════════
+   CHAIN FINDER
+════════════════════════════════════════════ */
+.chain-controls{
+  display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;
+  margin-bottom:20px;
+}
+.field-group{}
+.field-lbl{
+  font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(200,230,245,0.3);display:block;margin-bottom:7px;
+}
+.field-inp,.field-sel{
+  width:100%;
+  background:rgba(0,0,0,0.35);
+  border:1px solid rgba(0,212,255,0.15);border-radius:9px;
+  padding:11px 14px;
+  font-family:'Outfit',sans-serif;font-size:12px;color:rgba(200,230,245,0.85);
+  outline:none;transition:border-color 0.25s,box-shadow 0.25s;
+  -webkit-appearance:none;
+}
+.field-inp:focus,.field-sel:focus{
+  border-color:rgba(0,212,255,0.45);
+  box-shadow:0 0 0 3px rgba(0,212,255,0.08);
+}
+.field-inp::placeholder{color:rgba(200,230,245,0.2);}
+
+.chain-result{
+  background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.1);
+  border-radius:var(--r-sm);min-height:130px;
+  display:flex;align-items:center;justify-content:center;
+  padding:16px;
+}
+.chain-empty{text-align:center;}
+.chain-empty-icon{font-size:28px;margin-bottom:8px;opacity:0.3;}
+.chain-empty-t{font-size:12px;color:rgba(200,230,245,0.3);}
+.chain-entry{
+  display:flex;align-items:center;gap:14px;
+  padding:10px 0;border-bottom:1px solid rgba(0,212,255,0.06);
+}
+.chain-entry:last-child{border-bottom:none;}
+.chain-rank{
+  width:26px;height:26px;border-radius:8px;flex-shrink:0;
+  background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.18);
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;color:var(--c1);
+  font-family:'JetBrains Mono',monospace;
+}
+.chain-id{font-size:12px;font-weight:500;color:rgba(200,230,245,0.85);}
+.chain-cls{font-size:10px;color:rgba(200,230,245,0.35);margin-top:2px;}
+.chain-bar{flex:1;height:4px;background:rgba(0,212,255,0.07);border-radius:99px;overflow:hidden;margin:0 8px;}
+.chain-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--c1),var(--c2));}
+.chain-len{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:var(--c1);}
+.chain-conf{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--c2);width:36px;text-align:right;}
+
+/* ════════════════════════════════════════════
+   ESD FORMULA CARDS
+════════════════════════════════════════════ */
+.formula-card{
+  background:rgba(0,0,0,0.35);border:1px solid rgba(0,212,255,0.1);
+  border-radius:var(--r-sm);padding:16px;
+  transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1), border-color 0.3s, box-shadow 0.3s;
+  cursor:default;
+}
+.formula-card:hover{
+  transform:translateY(-4px);
+  border-color:rgba(0,212,255,0.25);
+  box-shadow:0 12px 32px rgba(0,0,0,0.3), 0 0 24px rgba(0,212,255,0.08);
+}
+.formula-name{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--c6);margin-bottom:8px;}
+.formula-eq{font-family:'JetBrains Mono',monospace;font-size:12px;color:rgba(200,230,245,0.8);}
+.formula-note{font-size:10px;color:rgba(200,230,245,0.3);margin-top:5px;}
+
+/* ════════════════════════════════════════════
+   ACC RING (canvas)
+════════════════════════════════════════════ */
+#accRing{display:block;margin:0 auto;}
+
+/* ════════════════════════════════════════════
+   CHART CONTAINERS
+════════════════════════════════════════════ */
+.ch{position:relative;}
+.ch-260{height:260px;}
+.ch-200{height:200px;}
+.ch-310{height:310px;}
+.ch-360{height:360px;}
+
+/* ════════════════════════════════════════════
+   KV ROWS (key-value)
+════════════════════════════════════════════ */
+.kv{display:flex;flex-direction:column;gap:9px;}
+.kv-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;}
+.kv-k{color:rgba(200,230,245,0.35);font-weight:300;}
+.kv-v{font-family:'JetBrains Mono',monospace;color:rgba(200,230,245,0.75);}
+.kv-v.c1{color:var(--c1);}
+.kv-v.c2{color:var(--c2);}
+.kv-v.c4{color:var(--c4);}
+.kv-sep{height:1px;background:rgba(0,212,255,0.06);margin:4px 0;}
+
+/* ════════════════════════════════════════════
+   FOOTER
+════════════════════════════════════════════ */
+.foot{
+  margin-top:64px;padding-top:24px;padding-bottom:48px;
+  border-top:1px solid rgba(0,212,255,0.08);
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:11px;color:rgba(200,230,245,0.25);
+}
+.foot-live{display:flex;align-items:center;gap:7px;}
+
+/* ════════════════════════════════════════════
+   ENTRANCE ANIMATIONS
+════════════════════════════════════════════ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) forwards;opacity:0;}
+.d1{animation-delay:0.05s}.d2{animation-delay:0.12s}.d3{animation-delay:0.2s}
+.d4{animation-delay:0.28s}.d5{animation-delay:0.38s}.d6{animation-delay:0.5s}
+
+/* ════════════════════════════════════════════
+   LIQUID GLASS NAV PILL (floating)
+════════════════════════════════════════════ */
+#floating-pill{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  z-index:200;
+  background:rgba(6,21,37,0.7);
+  backdrop-filter:blur(28px) saturate(200%);
+  -webkit-backdrop-filter:blur(28px) saturate(200%);
+  border:1px solid rgba(0,212,255,0.2);
+  border-radius:99px;padding:8px 12px;
+  display:flex;gap:6px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.5),0 0 0 1px rgba(0,212,255,0.05) inset;
+}
+.pill-item{
+  width:36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;cursor:pointer;
+  transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1), background 0.25s, box-shadow 0.25s;
+  border:1px solid transparent;
+  position:relative;
+}
+.pill-item:hover{
+  transform:translateY(-6px) scale(1.18);
+  background:rgba(0,212,255,0.12);
+  border-color:rgba(0,212,255,0.25);
+  box-shadow:0 8px 20px rgba(0,0,0,0.3), 0 0 16px rgba(0,212,255,0.2);
+}
+.pill-item:hover .pill-tooltip{opacity:1;transform:translateX(-50%) translateY(0);}
+.pill-tooltip{
+  position:absolute;bottom:calc(100% + 10px);left:50%;
+  transform:translateX(-50%) translateY(4px);
+  background:rgba(6,21,37,0.95);border:1px solid rgba(0,212,255,0.2);
+  border-radius:8px;padding:5px 10px;
+  font-size:10px;font-weight:600;color:var(--c1);white-space:nowrap;
+  opacity:0;transition:opacity 0.2s,transform 0.2s;
+  pointer-events:none;letter-spacing:0.5px;
+}
+
+/* ════════════════════════════════════════════
+   GLOW BORDERS (animated)
+════════════════════════════════════════════ */
+.glow-border{position:relative;}
+.glow-border::after{
+  content:'';position:absolute;inset:-1px;border-radius:calc(var(--r) + 1px);
+  background:linear-gradient(90deg,var(--c1),var(--c2),var(--c3),var(--c1));
+  background-size:300% 100%;
+  animation:border-run 4s linear infinite;
+  z-index:-1;opacity:0;transition:opacity 0.4s;
+}
+.glow-border:hover::after{opacity:0.35;}
+@keyframes border-run{0%{background-position:0% 0}100%{background-position:300% 0}}
+
+</style>
+</head>
+<body>
+
+<!-- Cursor -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- Ambient -->
+<div id="ambient">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+<div id="grid-bg"></div>
+
+<!-- ════════════ SIDEBAR ════════════ -->
+<nav class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-badge"><div class="sb-pulse"></div>v9 · Live</div>
+    <div class="sb-title">Phyto<span>Vision</span></div>
+    <div class="sb-sub">CLASSIFICATION · v9</div>
+  </div>
+
+  <div class="sb-section">Overview</div>
+  <a class="nav-link active" href="#hero">
+    <div class="nav-icon-wrap">◈</div> Dashboard
+    <div class="nav-chip">home</div>
+  </a>
+  <a class="nav-link" href="#dataset">
+    <div class="nav-icon-wrap">⬡</div> Dataset
+    <div class="nav-chip">12K</div>
+  </a>
+
+  <div class="sb-section">Model</div>
+  <a class="nav-link" href="#arch">
+    <div class="nav-icon-wrap">⊹</div> Architecture
+  </a>
+  <a class="nav-link" href="#training">
+    <div class="nav-icon-wrap">↗</div> Training
+    <div class="nav-chip">22ep</div>
+  </a>
+  <a class="nav-link" href="#eval">
+    <div class="nav-icon-wrap">◎</div> Evaluation
+  </a>
+
+  <div class="sb-section">Analysis</div>
+  <a class="nav-link" href="#esd">
+    <div class="nav-icon-wrap">≋</div> ESD Params
+    <div class="nav-chip" style="color:var(--c6);border-color:rgba(255,179,71,0.25)">CSV</div>
+  </a>
+  <a class="nav-link" href="#geo">
+    <div class="nav-icon-wrap">⊕</div> Geospatial
+  </a>
+  <a class="nav-link" href="#histo">
+    <div class="nav-icon-wrap">▦</div> Histograms
+  </a>
+  <a class="nav-link" href="#chains">
+    <div class="nav-icon-wrap">⛓</div> Chain Finder
+  </a>
+
+  <div class="sb-foot">
+    <div class="sb-foot-mono">Model: <b>v9</b> · TF <b>2.19</b></div>
+    <div class="sb-foot-mono" style="margin-top:5px;display:flex;align-items:center;gap:7px;">
+      <div class="sb-pulse"></div>A100 Runtime
+    </div>
+  </div>
+</nav>
+
+<!-- ════════════ MAIN ════════════ -->
+<main class="main">
+
+<!-- ─── HERO ─── -->
+<div class="hero fu d1" id="hero">
+  <div class="hero-chips">
+    <div class="chip chip-c1">PhytoVision</div>
+    <div class="chip chip-c2">EfficientNetV2-L</div>
+    <div class="chip chip-c3">Mixed FP16 · A100</div>
+    <div class="chip chip-c5">Logit-Adjusted CE</div>
+    <div class="chip chip-c6">Balanced Sampling</div>
+  </div>
+  <h1 class="hero-title">
+    Phytoplankton<br><span class="grad">Classification</span>
+  </h1>
+  <p class="hero-sub">
+    Deep-learning pipeline for autonomous microscopy-based identification of 8–10 marine phytoplankton classes.
+    Trained on 12,315 images across 2 library sources with two-stage fine-tuning and imbalance correction.
+  </p>
+</div>
+
+<!-- ─── STATS ─── -->
+<div class="stats-row fu d2">
+  <div class="glass glass-hover tilt stat" style="padding:22px 20px">
+    <div class="stat-icon si-c1">🌊</div>
+    <div class="stat-lbl">Total Images</div>
+    <div class="stat-val"><span id="n-cnt">0</span></div>
+    <div class="stat-note up">↑ Library 1 + 2</div>
+    <div class="stat-accent-line" style="background:var(--c1)"></div>
+  </div>
+  <div class="glass glass-hover tilt stat">
+    <div class="stat-icon si-c2">🔬</div>
+    <div class="stat-lbl">Classes</div>
+    <div class="stat-val"><span id="k-cnt">0</span></div>
+    <div class="stat-note">8 active in training</div>
+    <div class="stat-accent-line" style="background:var(--c2)"></div>
+  </div>
+  <div class="glass glass-hover tilt stat">
+    <div class="stat-icon si-c1">◎</div>
+    <div class="stat-lbl">Val Accuracy</div>
+    <div class="stat-val"><span id="acc-cnt">0</span><span class="stat-unit">%</span></div>
+    <div class="stat-note up">↑ Best epoch 7 / Stage 2</div>
+    <div class="stat-accent-line" style="background:var(--c1)"></div>
+  </div>
+  <div class="glass glass-hover tilt stat">
+    <div class="stat-icon si-c5">⚙</div>
+    <div class="stat-lbl">Parameters</div>
+    <div class="stat-val">118<span class="stat-unit">M</span></div>
+    <div class="stat-note">662K trainable</div>
+    <div class="stat-accent-line" style="background:var(--c5)"></div>
+  </div>
+  <div class="glass glass-hover tilt stat">
+    <div class="stat-icon si-c6">F1</div>
+    <div class="stat-lbl">Macro F1</div>
+    <div class="stat-val">0.50</div>
+    <div class="stat-note">110× class imbalance</div>
+    <div class="stat-accent-line" style="background:var(--c6)"></div>
+  </div>
+</div>
+
+<!-- ─────────────────────── DATASET ─────────────────────── -->
+<section class="section fu d3" id="dataset">
+  <div class="sec-head">
+    <div class="sec-num">01</div>
+    <div>
+      <div class="sec-title">Dataset Overview</div>
+      <div class="sec-sub">Class distribution and composition across merged libraries</div>
+    </div>
+    <div class="sec-actions">
+      <button class="btn">Export CSV</button>
+      <button class="btn btn-glow">Full Stats</button>
+    </div>
+  </div>
+
+  <div class="g65" style="margin-bottom:20px">
+    <div class="glass glow-border card-inner">
+      <div class="card-title"><div class="card-dot"></div>Class Distribution — Library 1 (8 classes)</div>
+      <div id="cls-bars"></div>
+    </div>
+    <div class="glass card-inner">
+      <div class="card-title"><div class="card-dot c2"></div>Balance Ratio</div>
+      <div class="ch ch-200"><canvas id="donutC"></canvas></div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:14px">
+        <div class="chip chip-c4" style="font-size:8px">110× imbalance</div>
+        <div class="chip chip-c1" style="font-size:8px">Sqrt sampling</div>
+        <div class="chip chip-c5" style="font-size:8px">Stratified split</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="glass card-inner glass-hover tilt">
+      <div class="card-title"><div class="card-dot"></div>Multi-Library</div>
+      <div class="kv">
+        <div class="kv-row"><span class="kv-k">Library 1</span><span class="kv-v">10,473 img</span></div>
+        <div class="kv-row"><span class="kv-k">Library 2</span><span class="kv-v">1,842 img</span></div>
+        <div class="kv-sep"></div>
+        <div class="kv-row"><span class="kv-k">Combined</span><span class="kv-v c1">12,315</span></div>
+        <div class="kv-row"><span class="kv-k">Extra classes</span><span class="kv-v" style="font-size:10px">Pennate Diatoms, Richelia</span></div>
+      </div>
+    </div>
+    <div class="glass card-inner glass-hover tilt">
+      <div class="card-title"><div class="card-dot c2"></div>Split Details</div>
+      <div class="kv">
+        <div class="kv-row"><span class="kv-k">Train</span><span class="kv-v">8,378 (80%)</span></div>
+        <div class="kv-row"><span class="kv-k">Validation</span><span class="kv-v">2,095 (20%)</span></div>
+        <div class="kv-row"><span class="kv-k">Strategy</span><span class="kv-v">Stratified</span></div>
+        <div class="kv-row"><span class="kv-k">Steps/epoch</span><span class="kv-v c2">262</span></div>
+      </div>
+    </div>
+    <div class="glass card-inner glass-hover tilt">
+      <div class="card-title"><div class="card-dot c5"></div>Augmentation</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:11px;color:rgba(200,230,245,0.55);font-family:'JetBrains Mono',monospace">RandomFlip horizontal</div>
+        <div style="font-size:11px;color:rgba(200,230,245,0.55);font-family:'JetBrains Mono',monospace">RandomRotation ±10%</div>
+        <div style="font-size:11px;color:rgba(200,230,245,0.55);font-family:'JetBrains Mono',monospace">RandomZoom ±10%</div>
+        <div style="font-size:11px;color:rgba(200,230,245,0.55);font-family:'JetBrains Mono',monospace">RandomTranslation ±6%</div>
+        <div style="font-size:11px;color:var(--c4);font-family:'JetBrains Mono',monospace">No contrast aug ← microscopy</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─────────────────────── ARCHITECTURE ─────────────────────── -->
+<section class="section fu d3" id="arch">
+  <div class="sec-head">
+    <div class="sec-num">02</div>
+    <div>
+      <div class="sec-title">Model Architecture</div>
+      <div class="sec-sub">EfficientNetV2-L backbone · 384×384 · 118M params · Mixed FP16</div>
+    </div>
+  </div>
+  <div class="glass card-inner">
+    <div class="card-title"><div class="card-dot"></div>Forward Pass — hover each block</div>
+    <div class="arch-strip">
+      <div class="arch-block"><div class="arch-block-n">Input</div><div class="arch-block-d">384×384×3</div></div>
+      <div class="arch-arr">→</div>
+      <div class="arch-block" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.06)">
+        <div class="arch-block-n" style="color:var(--c5)">Augment</div><div class="arch-block-d">Flip·Rot·Zoom</div>
+      </div>
+      <div class="arch-arr">→</div>
+      <div class="arch-block"><div class="arch-block-n">Preprocess</div><div class="arch-block-d">ENv2 normalize</div></div>
+      <div class="arch-arr">→</div>
+      <div class="arch-block arch-hl" style="min-width:170px">
+        <div class="arch-block-n" style="color:var(--c1)">EfficientNetV2-L</div>
+        <div class="arch-block-d">117.7M · frozen S1</div>
+      </div>
+      <div class="arch-arr">→</div>
+      <div class="arch-block"><div class="arch-block-n">GAP</div><div class="arch-block-d">1280-dim</div></div>
+      <div class="arch-arr">→</div>
+      <div class="arch-block"><div class="arch-block-n">BN + Drop 0.4</div><div class="arch-block-d">1280-dim</div></div>
+      <div class="arch-arr">→</div>
+      <div class="arch-block"><div class="arch-block-n">Dense Swish</div><div class="arch-block-d">512-dim</div></div>
+      <div class="arch-arr">→</div>
+      <div class="arch-block"><div class="arch-block-n">Drop 0.3</div><div class="arch-block-d">512-dim</div></div>
+      <div class="arch-arr">→</div>
+      <div class="arch-block" style="border-color:rgba(0,255,195,0.3);background:rgba(0,255,195,0.05)">
+        <div class="arch-block-n" style="color:var(--c2)">Logits fp32</div>
+        <div class="arch-block-d">8 classes out</div>
+      </div>
+    </div>
+    <div class="stage-strip">
+      <div class="stage-badge"><div class="stage-dot" style="background:var(--c1)"></div>Stage 1: Head only · LR 2e-4 · Cosine · 12ep</div>
+      <div class="stage-badge"><div class="stage-dot" style="background:var(--c2)"></div>Stage 2: Top 5% unfrozen · LR 5e-6 · 10ep</div>
+      <div class="stage-badge"><div class="stage-dot" style="background:var(--c4)"></div>Loss: SparseCatCE from_logits</div>
+      <div class="stage-badge"><div class="stage-dot" style="background:var(--c5)"></div>Optimizer: AdamW · wd 1e-4</div>
+      <div class="stage-badge"><div class="stage-dot" style="background:var(--c6)"></div>Batch 32 · Steps 262 · Mixed FP16</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─────────────────────── TRAINING ─────────────────────── -->
+<section class="section fu d4" id="training">
+  <div class="sec-head">
+    <div class="sec-num">03</div>
+    <div>
+      <div class="sec-title">Training History</div>
+      <div class="sec-sub">Stage 1 (ep 1–12) + Stage 2 fine-tune (ep 13–22) · 22 total epochs</div>
+    </div>
+  </div>
+
+  <div class="g2" style="margin-bottom:20px">
+    <div class="glass card-inner glow-border">
+      <div class="card-title"><div class="card-dot"></div>Accuracy — Train vs Validation</div>
+      <div class="ch ch-260"><canvas id="accChart"></canvas></div>
+    </div>
+    <div class="glass card-inner glow-border">
+      <div class="card-title"><div class="card-dot c4"></div>Loss — Train vs Validation</div>
+      <div class="ch ch-260"><canvas id="lossChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="glass card-inner glass-hover tilt">
+      <div class="card-title"><div class="card-dot"></div>Stage 1</div>
+      <div class="kv">
+        <div class="kv-row"><span class="kv-k">Epochs</span><span class="kv-v">1–12</span></div>
+        <div class="kv-row"><span class="kv-k">Best val_acc</span><span class="kv-v c1">59.86%</span></div>
+        <div class="kv-row"><span class="kv-k">LR schedule</span><span class="kv-v">Cosine 2e-4</span></div>
+        <div class="kv-row"><span class="kv-k">Trainable</span><span class="kv-v">Head only</span></div>
+      </div>
+    </div>
+    <div class="glass card-inner glass-hover tilt">
+      <div class="card-title"><div class="card-dot c2"></div>Stage 2</div>
+      <div class="kv">
+        <div class="kv-row"><span class="kv-k">Epochs</span><span class="kv-v">13–22</span></div>
+        <div class="kv-row"><span class="kv-k">Best val_acc</span><span class="kv-v c2">60.62%</span></div>
+        <div class="kv-row"><span class="kv-k">LR</span><span class="kv-v">Const 5e-6</span></div>
+        <div class="kv-row"><span class="kv-k">Unfrozen</span><span class="kv-v">Top 5%</span></div>
+      </div>
+    </div>
+    <div class="glass card-inner" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px">
+      <canvas id="accRing" width="120" height="120"></canvas>
+      <div style="text-align:center">
+        <div style="font-size:13px;font-weight:700;color:#fff">Best Val Accuracy</div>
+        <div style="font-size:11px;color:rgba(200,230,245,0.3)">Epoch 19 of Stage 2</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─────────────────────── EVALUATION ─────────────────────── -->
+<section class="section fu d4" id="eval">
+  <div class="sec-head">
+    <div class="sec-num">04</div>
+    <div>
+      <div class="sec-title">Model Evaluation</div>
+      <div class="sec-sub">Confusion matrix · per-class F1 · 2,095 val samples</div>
+    </div>
+  </div>
+
+  <div class="g65" style="margin-bottom:20px">
+    <div class="glass card-inner">
+      <div class="card-title"><div class="card-dot"></div>Confusion Matrix — hover cells for details</div>
+      <div class="cm-wrap"><div id="cmContainer"></div></div>
+    </div>
+    <div class="glass card-inner">
+      <div class="card-title"><div class="card-dot c2"></div>F1 Score — Radar</div>
+      <div class="ch ch-310"><canvas id="f1Radar"></canvas></div>
+    </div>
+  </div>
+
+  <div class="glass card-inner">
+    <div class="card-title"><div class="card-dot"></div>Per-Class Metrics — Precision / Recall / F1 / Support</div>
+    <table class="mt"><thead><tr>
+      <th style="width:175px">Class</th><th>Precision</th><th>Recall</th><th>F1</th><th>Support</th><th>F1 Bar</th>
+    </tr></thead><tbody id="mtBody"></tbody></table>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─────────────────────── ESD ─────────────────────── -->
+<section class="section fu d4" id="esd">
+  <div class="sec-head">
+    <div class="sec-num">05</div>
+    <div>
+      <div class="sec-title">ESD Parameter Analysis</div>
+      <div class="sec-sub">Equivalent Spherical Diameter · biovolume · carbon content derivations from CSV</div>
+    </div>
+  </div>
+
+  <div class="glass card-inner" style="margin-bottom:20px">
+    <div class="card-title"><div class="card-dot c6"></div>Derivation Formulas — hover to explore</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:4px">
+      <div class="formula-card">
+        <div class="formula-name">Biovolume</div>
+        <div class="formula-eq">V = (π/6) × ESD³</div>
+        <div class="formula-note">Sphere approximation · µm³</div>
+      </div>
+      <div class="formula-card">
+        <div class="formula-name">Carbon Content</div>
+        <div class="formula-eq">C = 0.109 × V^0.991</div>
+        <div class="formula-note">Menden-Deuer & Lessard 2000</div>
+      </div>
+      <div class="formula-card">
+        <div class="formula-name">Size Class</div>
+        <div class="formula-eq">&lt;2 · 2-20 · &gt;20 µm</div>
+        <div class="formula-note">Pico · Nano · Micro</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:14px">
+      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.08);border-radius:10px;padding:14px">
+        <div style="font-size:9px;color:rgba(0,212,255,0.4);letter-spacing:1.5px;font-family:'JetBrains Mono',monospace;margin-bottom:10px">ESD (µm)</div>
+        <div class="skel" style="width:100%;margin-bottom:5px"></div>
+        <div class="skel" style="width:72%;margin-bottom:5px;animation-delay:0.2s"></div>
+        <div class="skel" style="width:50%;animation-delay:0.4s"></div>
+      </div>
+      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.08);border-radius:10px;padding:14px">
+        <div style="font-size:9px;color:rgba(0,212,255,0.4);letter-spacing:1.5px;font-family:'JetBrains Mono',monospace;margin-bottom:10px">Biovolume (µm³)</div>
+        <div class="skel" style="width:85%;margin-bottom:5px;animation-delay:0.1s"></div>
+        <div class="skel" style="width:60%;margin-bottom:5px;animation-delay:0.3s"></div>
+        <div class="skel" style="width:40%;animation-delay:0.5s"></div>
+      </div>
+      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.08);border-radius:10px;padding:14px">
+        <div style="font-size:9px;color:rgba(0,212,255,0.4);letter-spacing:1.5px;font-family:'JetBrains Mono',monospace;margin-bottom:10px">Carbon (pgC/cell)</div>
+        <div class="skel" style="width:90%;margin-bottom:5px;animation-delay:0.15s"></div>
+        <div class="skel" style="width:68%;margin-bottom:5px;animation-delay:0.35s"></div>
+        <div class="skel" style="width:45%;animation-delay:0.55s"></div>
+      </div>
+      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.08);border-radius:10px;padding:14px">
+        <div style="font-size:9px;color:rgba(0,212,255,0.4);letter-spacing:1.5px;font-family:'JetBrains Mono',monospace;margin-bottom:10px">Aspect Ratio</div>
+        <div class="skel" style="width:78%;margin-bottom:5px;animation-delay:0.22s"></div>
+        <div class="skel" style="width:55%;margin-bottom:5px;animation-delay:0.42s"></div>
+        <div class="skel" style="width:35%;animation-delay:0.62s"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="glass await">
+      <div class="await-icon">📊</div>
+      <div class="await-tag">Awaiting CSV Import</div>
+      <div class="await-title">ESD Distribution by Class</div>
+      <div class="await-sub">Box plots of Equivalent Spherical Diameter per class will render once CSV files are loaded from Google Drive.</div>
+      <div class="await-fields">
+        <div class="await-field">esd_um</div><div class="await-field">class_label</div>
+        <div class="await-field">depth_m</div><div class="await-field">date_collected</div>
+      </div>
+    </div>
+    <div class="glass await">
+      <div class="await-icon">📈</div>
+      <div class="await-tag">Awaiting CSV Import</div>
+      <div class="await-title">Biovolume vs Carbon Scatter</div>
+      <div class="await-sub">Scatter plot of per-cell biovolume vs estimated carbon content, coloured by species. Derived via Menden-Deuer & Lessard formula.</div>
+      <div class="await-fields">
+        <div class="await-field">biovolume</div><div class="await-field">carbon_pg</div><div class="await-field">species</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─────────────────────── GEO ─────────────────────── -->
+<section class="section fu d5" id="geo">
+  <div class="sec-head">
+    <div class="sec-num">06</div>
+    <div>
+      <div class="sec-title">Geospatial Distribution</div>
+      <div class="sec-sub">Sample collection coordinates — awaiting data from Anima</div>
+    </div>
+    <div class="sec-actions"><button class="btn btn-glow">Import Coordinates</button></div>
+  </div>
+
+  <div class="g65">
+    <div class="glass card-inner">
+      <div class="card-title"><div class="card-dot"></div>Ocean Sample Map — demo positions</div>
+      <div class="map-box glass" style="border-radius:var(--r-sm)">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,15,30,0.8) 0%,rgba(4,20,40,0.6) 100%)"></div>
+        <div class="map-grid-overlay"></div>
+        <!-- Demo dots -->
+        <div class="map-dot-wrap" style="top:35%;left:20%"><div class="map-dot"></div><div class="map-label-t">Pacific · 24°N</div></div>
+        <div class="map-dot-wrap" style="top:48%;left:44%"><div class="map-dot" style="animation-delay:0.5s;background:var(--c2);box-shadow:0 0 14px var(--c2)"></div></div>
+        <div class="map-dot-wrap" style="top:28%;left:62%"><div class="map-dot" style="animation-delay:1s;background:var(--c5);box-shadow:0 0 14px var(--c5)"></div></div>
+        <div class="map-dot-wrap" style="top:58%;left:70%"><div class="map-dot" style="animation-delay:0.3s"></div></div>
+        <div class="map-dot-wrap" style="top:42%;left:55%"><div class="map-dot" style="animation-delay:0.8s;background:var(--c6);box-shadow:0 0 14px var(--c6)"></div></div>
+        <div class="map-dot-wrap" style="top:65%;left:32%"><div class="map-dot" style="animation-delay:1.3s;background:var(--c2);box-shadow:0 0 14px var(--c2)"></div></div>
+        <div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%)">
+          <div class="await-tag" style="font-size:8px">Coordinate Data from Anima Pending</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(200,230,245,0.35)"><div style="width:7px;height:7px;border-radius:50%;background:var(--c1)"></div>Cyanobacteria</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(200,230,245,0.35)"><div style="width:7px;height:7px;border-radius:50%;background:var(--c2)"></div>Diatoms</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(200,230,245,0.35)"><div style="width:7px;height:7px;border-radius:50%;background:var(--c5)"></div>Mixed</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(200,230,245,0.35)"><div style="width:7px;height:7px;border-radius:50%;background:var(--c6)"></div>Unknown</div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="glass await" style="flex:1;min-height:160px">
+        <div class="await-icon" style="font-size:28px">📍</div>
+        <div class="await-title">Station Metadata</div>
+        <div class="await-sub" style="font-size:11px">Lat/Lon · depth · cruise ID · temp · salinity</div>
+        <div class="await-fields">
+          <div class="await-field">lat</div><div class="await-field">lon</div>
+          <div class="await-field">depth_m</div><div class="await-field">cruise_id</div>
+        </div>
+      </div>
+      <div class="glass card-inner glass-hover">
+        <div class="card-title" style="font-size:10px"><div class="card-dot c5"></div>Expected Fields</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:11px;color:rgba(200,230,245,0.35)">Latitude / Longitude (decimal)</div>
+          <div style="font-size:11px;color:rgba(200,230,245,0.35)">Sampling depth (m)</div>
+          <div style="font-size:11px;color:rgba(200,230,245,0.35)">Collection date + cruise ID</div>
+          <div style="font-size:11px;color:rgba(200,230,245,0.35)">Sea surface temp (°C)</div>
+          <div style="font-size:11px;color:rgba(200,230,245,0.35)">Salinity (PSU)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─────────────────────── HISTOGRAMS ─────────────────────── -->
+<section class="section fu d5" id="histo">
+  <div class="sec-head">
+    <div class="sec-num">07</div>
+    <div>
+      <div class="sec-title">Feature Histograms</div>
+      <div class="sec-sub">Morphological and optical distributions — awaiting data from Yeshitha</div>
+    </div>
+  </div>
+  <div class="g3">
+    <div class="glass card-inner glass-hover tilt">
+      <div class="card-title"><div class="card-dot"></div>Cell Size Distribution</div>
+      <div class="hist-wrap">
+        <div class="hist-bar" style="height:25%"></div>
+        <div class="hist-bar" style="height:42%;animation-delay:0.1s"></div>
+        <div class="hist-bar" style="height:68%;animation-delay:0.2s"></div>
+        <div class="hist-bar" style="height:100%;animation-delay:0.3s"></div>
+        <div class="hist-bar" style="height:88%;animation-delay:0.4s"></div>
+        <div class="hist-bar" style="height:60%;animation-delay:0.5s"></div>
+        <div class="hist-bar" style="height:38%;animation-delay:0.6s"></div>
+        <div class="hist-bar" style="height:18%;animation-delay:0.7s"></div>
+        <div class="hist-bar" style="height:9%;animation-delay:0.8s"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:7px 2px 0;font-size:9px;color:rgba(200,230,245,0.25);font-family:'JetBrains Mono',monospace">
+        <span>0µm</span><span>5µm</span><span>10µm</span><span>25µm</span><span>50µm+</span>
+      </div>
+      <div class="await-tag" style="font-size:8px;margin-top:12px">Awaiting — Yeshitha</div>
+    </div>
+    <div class="glass card-inner glass-hover tilt">
+      <div class="card-title"><div class="card-dot c2"></div>Fluorescence Intensity</div>
+      <div class="hist-wrap">
+        <div class="hist-bar" style="height:58%;background:linear-gradient(180deg,rgba(0,255,195,0.15),rgba(0,255,195,0.04))"></div>
+        <div class="hist-bar" style="height:80%;animation-delay:0.12s;background:linear-gradient(180deg,rgba(0,255,195,0.18),rgba(0,255,195,0.04))"></div>
+        <div class="hist-bar" style="height:100%;animation-delay:0.22s;background:linear-gradient(180deg,rgba(0,255,195,0.22),rgba(0,255,195,0.04))"></div>
+        <div class="hist-bar" style="height:82%;animation-delay:0.32s;background:linear-gradient(180deg,rgba(0,255,195,0.18),rgba(0,255,195,0.04))"></div>
+        <div class="hist-bar" style="height:55%;animation-delay:0.42s;background:linear-gradient(180deg,rgba(0,255,195,0.14),rgba(0,255,195,0.04))"></div>
+        <div class="hist-bar" style="height:32%;animation-delay:0.52s;background:linear-gradient(180deg,rgba(0,255,195,0.1),rgba(0,255,195,0.04))"></div>
+        <div class="hist-bar" style="height:15%;animation-delay:0.62s;background:linear-gradient(180deg,rgba(0,255,195,0.08),rgba(0,255,195,0.04))"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:7px 2px 0;font-size:9px;color:rgba(200,230,245,0.25);font-family:'JetBrains Mono',monospace">
+        <span>Low</span><span>Med</span><span>High</span>
+      </div>
+      <div class="await-tag" style="font-size:8px;margin-top:12px;background:rgba(0,255,195,0.07);color:var(--c2);border-color:rgba(0,255,195,0.2)">Awaiting — Yeshitha</div>
+    </div>
+    <div class="glass card-inner glass-hover tilt">
+      <div class="card-title"><div class="card-dot c5"></div>Pixel Intensity (Grayscale)</div>
+      <div class="hist-wrap">
+        <div class="hist-bar" style="height:12%;background:linear-gradient(180deg,rgba(167,139,250,0.12),rgba(167,139,250,0.04))"></div>
+        <div class="hist-bar" style="height:28%;animation-delay:0.05s;background:linear-gradient(180deg,rgba(167,139,250,0.16),rgba(167,139,250,0.04))"></div>
+        <div class="hist-bar" style="height:52%;animation-delay:0.1s;background:linear-gradient(180deg,rgba(167,139,250,0.18),rgba(167,139,250,0.04))"></div>
+        <div class="hist-bar" style="height:77%;animation-delay:0.15s;background:linear-gradient(180deg,rgba(167,139,250,0.2),rgba(167,139,250,0.04))"></div>
+        <div class="hist-bar" style="height:100%;animation-delay:0.2s;background:linear-gradient(180deg,rgba(167,139,250,0.25),rgba(167,139,250,0.04))"></div>
+        <div class="hist-bar" style="height:88%;animation-delay:0.25s;background:linear-gradient(180deg,rgba(167,139,250,0.22),rgba(167,139,250,0.04))"></div>
+        <div class="hist-bar" style="height:66%;animation-delay:0.3s;background:linear-gradient(180deg,rgba(167,139,250,0.18),rgba(167,139,250,0.04))"></div>
+        <div class="hist-bar" style="height:42%;animation-delay:0.35s;background:linear-gradient(180deg,rgba(167,139,250,0.14),rgba(167,139,250,0.04))"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:7px 2px 0;font-size:9px;color:rgba(200,230,245,0.25);font-family:'JetBrains Mono',monospace">
+        <span>0</span><span>64</span><span>128</span><span>192</span><span>255</span>
+      </div>
+      <div class="await-tag" style="font-size:8px;margin-top:12px;background:rgba(167,139,250,0.07);color:var(--c5);border-color:rgba(167,139,250,0.2)">Awaiting — Yeshitha</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ─────────────────────── CHAIN FINDER ─────────────────────── -->
+<section class="section fu d6" id="chains">
+  <div class="sec-head">
+    <div class="sec-num">08</div>
+    <div>
+      <div class="sec-title">Long Chain Finder</div>
+      <div class="sec-sub">Identify and rank phytoplankton chains · connect CSV for live detection</div>
+    </div>
+  </div>
+  <div class="glass card-inner">
+    <div class="card-title"><div class="card-dot"></div>Search Parameters</div>
+    <div class="chain-controls">
+      <div class="field-group">
+        <label class="field-lbl">Species / Class</label>
+        <select class="field-sel" id="chainCls">
+          <option value="">All classes</option>
+          <option>Crocosphaera</option><option>Cyanobacteria</option>
+          <option>Mineral particles</option><option>Nanophytoplanton</option>
+          <option>Nitzschia</option><option>Picocyanobacteria</option>
+          <option>Prochlorococcus</option><option>Synechococcus</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-lbl">Min Chain Length (cells)</label>
+        <input type="number" class="field-inp" id="chainMin" value="4" placeholder="e.g. 4">
+      </div>
+      <div class="field-group">
+        <label class="field-lbl">Min Confidence (%)</label>
+        <input type="number" class="field-inp" id="chainConf" value="70" placeholder="e.g. 70">
+      </div>
+      <div class="field-group" style="display:flex;align-items:flex-end">
+        <button class="btn btn-glow" style="width:100%;padding:11px 0;font-size:12px" onclick="runChain()">⛓ Find Chains</button>
+      </div>
+    </div>
+    <div class="chain-result" id="chainResult">
+      <div class="chain-empty">
+        <div class="chain-empty-icon">⛓</div>
+        <div class="chain-empty-t">Set parameters and press Find Chains</div>
+        <div style="font-size:10px;color:rgba(200,230,245,0.2);margin-top:4px">Connect dataset CSV for live detection</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding:12px 16px;background:rgba(0,0,0,0.25);border:1px solid rgba(0,212,255,0.08);border-radius:10px;display:flex;gap:20px;flex-wrap:wrap">
+      <div style="font-size:11px;color:rgba(200,230,245,0.3)">💡 Long chains indicate nutrient limitation or colonial growth in <span style="color:var(--c1)">Prochlorococcus</span></div>
+      <div style="font-size:11px;color:rgba(200,230,245,0.3)">⚡ <span style="color:var(--c4)">CSV required</span> for real detections · demo data shown</div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<div class="foot">
+  <div>PhytoVision · v9 · EfficientNetV2-L · TF 2.19.0 · A100</div>
+  <div class="foot-live"><div class="sb-pulse"></div>Session Active</div>
+</div>
+
+</main>
+
+<!-- ─── Floating Pill ─── -->
+<div id="floating-pill">
+  <div class="pill-item" onclick="scrollTo('#hero')">🏠<div class="pill-tooltip">Dashboard</div></div>
+  <div class="pill-item" onclick="scrollTo('#dataset')">📊<div class="pill-tooltip">Dataset</div></div>
+  <div class="pill-item" onclick="scrollTo('#arch')">⚙<div class="pill-tooltip">Architecture</div></div>
+  <div class="pill-item" onclick="scrollTo('#training')">📈<div class="pill-tooltip">Training</div></div>
+  <div class="pill-item" onclick="scrollTo('#eval')">◎<div class="pill-tooltip">Evaluation</div></div>
+  <div class="pill-item" onclick="scrollTo('#esd')">≋<div class="pill-tooltip">ESD</div></div>
+  <div class="pill-item" onclick="scrollTo('#geo')">🗺<div class="pill-tooltip">Geo</div></div>
+  <div class="pill-item" onclick="scrollTo('#chains')">⛓<div class="pill-tooltip">Chains</div></div>
+</div>
+
+<script>
+/* ═══════════ CURSOR ═══════════ */
+const cur=document.getElementById('cursor'),ring=document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
+(function animRing(){rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animRing);})();
+
+/* ═══════════ SCROLL PILL ═══════════ */
+function scrollTo(sel){document.querySelector(sel).scrollIntoView({behavior:'smooth'});}
+
+/* ═══════════ MAGNETIC TILT ═══════════ */
+document.querySelectorAll('.tilt').forEach(el=>{
+  el.addEventListener('mousemove',e=>{
+    const r=el.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width-0.5;
+    const y=(e.clientY-r.top)/r.height-0.5;
+    el.style.transform=`perspective(900px) rotateY(${x*10}deg) rotateX(${-y*10}deg) translateY(-3px)`;
+  });
+  el.addEventListener('mouseleave',()=>{
+    el.style.transform='perspective(900px) rotateY(0) rotateX(0) translateY(0)';
+  });
+});
+
+/* ═══════════ NAV ACTIVE ═══════════ */
+const secs=document.querySelectorAll('section[id]');
+const navs=document.querySelectorAll('.nav-link');
+window.addEventListener('scroll',()=>{
+  let cur='';
+  secs.forEach(s=>{if(window.scrollY>=s.offsetTop-90)cur=s.id;});
+  navs.forEach(n=>{n.classList.toggle('active',n.getAttribute('href')==='#'+cur);});
+});
+
+/* ═══════════ DATA ═══════════ */
+const CN=['Crocosphaera','Cyanobacteria','Mineral particles','Nanophytoplanton','Nitzschia','Picocyanobacteria','Prochlorococcus','Synechococcus'];
+const CS=['Croco','Cyano','Mineral','Nanophyto','Nitzschia','PicoCyano','Prochloro','Synecho'];
+const CC=[66,37,239,3503,42,4071,2210,305];
+const COLS=['#00d4ff','#00ffc3','#a78bfa','#ff6b35','#ffd700','#f472b6','#60d9fa','#4ade80'];
+const TRAIN_ACC=[.5803,.5751,.5728,.5862,.5816,.6018,.6148,.5895,.5934,.5866,.6102,.6074,.6051,.6054,.6209,.6075,.6146,.6306,.6338,.6277,.6247,.6350];
+const VAL_ACC=[.5866,.5866,.5905,.5871,.5909,.5881,.5895,.5986,.5933,.5857,.5885,.5890,.5943,.5933,.5924,.6000,.6000,.6043,.6062,.5971,.6038,.6019];
+const TRAIN_LOSS=[1.0381,1.0546,1.0116,1.0113,1.0130,.9755,.9663,1.0009,.9859,.9885,.9488,.9642,.9609,.9490,.9200,.9445,.9160,.8881,.8924,.8876,.8841,.8627];
+const VAL_LOSS=[.9313,.9364,.9293,.9322,.9288,.9395,.9284,.9226,.9216,.9287,.9244,.9230,.9228,.9215,.9185,.9031,.9024,.9110,.8994,.9143,.9003,.9054];
+const CM=[[2,3,0,4,0,2,0,2],[2,3,2,0,0,0,0,0],[0,1,46,0,0,0,0,1],[21,10,0,426,3,187,37,17],[0,2,0,0,7,0,0,0],[3,0,0,82,0,644,85,0],[1,0,0,33,0,285,123,0],[7,4,0,25,1,3,2,19]];
+const PC=[{p:.0556,r:.1538,f1:.0816,s:13},{p:.1304,r:.4286,f1:.200,s:7},{p:.9583,r:.9583,f1:.9583,s:48},{p:.7474,r:.6077,f1:.6703,s:701},{p:.6364,r:.7778,f1:.700,s:9},{p:.5745,r:.7912,f1:.6656,s:814},{p:.4980,r:.2783,f1:.357,s:442},{p:.4872,r:.3115,f1:.380,s:61}];
+
+/* ═══════════ COUNTERS ═══════════ */
+function cnt(id,target,dur,dec=0){
+  const el=document.getElementById(id),s=performance.now();
+  const step=n=>{
+    const p=Math.min((n-s)/dur,1);
+    el.textContent=dec?((p*target).toFixed(dec)):(Math.round(p*target)).toLocaleString();
+    if(p<1)requestAnimationFrame(step);
+  };requestAnimationFrame(step);
+}
+setTimeout(()=>{cnt('n-cnt',12315,1400);cnt('k-cnt',10,700);cnt('acc-cnt',60.6,1200,1);},500);
+
+/* ═══════════ CLASS BARS ═══════════ */
+(()=>{
+  const max=Math.max(...CC),c=document.getElementById('cls-bars');
+  CN.forEach((n,i)=>{
+    const r=document.createElement('div');r.className='cls-row';
+    r.innerHTML=`<div class="cls-name"><div class="cls-swatch" style="background:${COLS[i]}"></div>${n}</div>
+      <div class="cls-track"><div class="cls-fill" style="width:0%;background:${COLS[i]}" data-w="${(CC[i]/max*100).toFixed(1)}"></div></div>
+      <div class="cls-count">${CC[i].toLocaleString()}</div>`;
+    c.appendChild(r);
+  });
+  setTimeout(()=>document.querySelectorAll('.cls-fill').forEach(e=>{e.style.width=e.dataset.w+'%';}),400);
+})();
+
+/* ═══════════ CHART DEFAULTS ═══════════ */
+Chart.defaults.color='rgba(200,230,245,0.4)';
+Chart.defaults.font.family="'JetBrains Mono',monospace";
+Chart.defaults.font.size=10;
+const gridC='rgba(0,212,255,0.06)';
+const tooltipDef={backgroundColor:'rgba(4,15,30,0.95)',borderColor:'rgba(0,212,255,0.2)',borderWidth:1,padding:10};
+
+/* ═══════════ DONUT ═══════════ */
+new Chart(document.getElementById('donutC'),{type:'doughnut',data:{labels:CN,datasets:[{data:CC,backgroundColor:COLS.map(c=>c+'88'),borderColor:COLS,borderWidth:1.5,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tooltipDef,callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw.toLocaleString()}`}}},cutout:'68%'}});
+
+/* ═══════════ TRAINING CHARTS ═══════════ */
+const epochs=Array.from({length:22},(_,i)=>i+1);
+const lineOpts={responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{font:{size:10},boxWidth:9,padding:12,color:'rgba(200,230,245,0.5)'}},tooltip:tooltipDef},scales:{x:{grid:{color:gridC},ticks:{color:'rgba(200,230,245,0.25)',font:{size:9}}},y:{grid:{color:gridC},ticks:{color:'rgba(200,230,245,0.25)',font:{size:9}}}}};
+
+new Chart(document.getElementById('accChart'),{type:'line',data:{labels:epochs,datasets:[{label:'Train Acc',data:TRAIN_ACC.map(v=>(v*100).toFixed(2)),borderColor:'rgba(0,212,255,0.85)',backgroundColor:'rgba(0,212,255,0.06)',tension:0.38,borderWidth:2,pointRadius:2,fill:true},{label:'Val Acc',data:VAL_ACC.map(v=>(v*100).toFixed(2)),borderColor:'rgba(0,255,195,0.8)',backgroundColor:'rgba(0,255,195,0.04)',tension:0.38,borderWidth:2,pointRadius:2,fill:true,borderDash:[4,2]}]},options:{...lineOpts,scales:{...lineOpts.scales,y:{...lineOpts.scales.y,min:55,max:65,ticks:{...lineOpts.scales.y.ticks,callback:v=>v+'%'}}}}});
+
+new Chart(document.getElementById('lossChart'),{type:'line',data:{labels:epochs,datasets:[{label:'Train Loss',data:TRAIN_LOSS,borderColor:'rgba(255,77,109,0.8)',backgroundColor:'rgba(255,77,109,0.05)',tension:0.38,borderWidth:2,pointRadius:2,fill:true},{label:'Val Loss',data:VAL_LOSS,borderColor:'rgba(167,139,250,0.8)',backgroundColor:'rgba(167,139,250,0.04)',tension:0.38,borderWidth:2,pointRadius:2,fill:true,borderDash:[4,2]}]},options:{...lineOpts,scales:{...lineOpts.scales,y:{...lineOpts.scales.y,min:0.85,max:1.1}}}});
+
+/* ═══════════ ACC RING ═══════════ */
+(()=>{
+  const cv=document.getElementById('accRing'),ctx=cv.getContext('2d');
+  const cx=60,cy=60,r=48,lw=8,acc=.6062;
+  ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,Math.PI*1.5);ctx.strokeStyle='rgba(0,212,255,0.08)';ctx.lineWidth=lw;ctx.stroke();
+  const g=ctx.createLinearGradient(cx-r,cy,cx+r,cy);g.addColorStop(0,'#00d4ff');g.addColorStop(1,'#00ffc3');
+  ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+Math.PI*2*acc);ctx.strokeStyle=g;ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();
+  ctx.fillStyle='#fff';ctx.font='bold 15px "Outfit",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('60.6%',cx,cy-5);
+  ctx.fillStyle='rgba(200,230,245,0.3)';ctx.font='8px "Outfit",sans-serif';ctx.fillText('val_acc',cx,cy+9);
+})();
+
+/* ═══════════ CONFUSION MATRIX ═══════════ */
+(()=>{
+  const wrap=document.getElementById('cmContainer');
+  const cell=44,gap=3;
+  const norm=CM.map(r=>{const s=r.reduce((a,b)=>a+b,0);return r.map(v=>s?v/s:0);});
+  function heat(v){
+    if(!v)return'rgba(4,15,30,0.7)';
+    const r=Math.round(0+v*0),g=Math.round(v*212),b=Math.round(v*255);
+    return`rgba(${r},${g},${b},${.15+v*.75})`;
+  }
+  const outer=document.createElement('div');outer.style.cssText='display:inline-block;';
+  // top labels
+  const topRow=document.createElement('div');topRow.style.cssText=`display:flex;padding-left:${cell+gap+2}px;gap:${gap}px;margin-bottom:${gap}px;`;
+  CS.forEach(n=>{const d=document.createElement('div');d.className='cm-col-lbl';d.style.cssText=`width:${cell}px;height:62px;font-size:8px;`;d.textContent=n;topRow.appendChild(d);});
+  outer.appendChild(topRow);
+  CM.forEach((row,i)=>{
+    const rowEl=document.createElement('div');rowEl.style.cssText=`display:flex;gap:${gap}px;align-items:center;margin-bottom:${gap}px;`;
+    const lbl=document.createElement('div');lbl.className='cm-row-lbl';lbl.style.cssText=`width:${cell}px;font-size:8px;padding-right:5px;flex-shrink:0;`;lbl.textContent=CS[i];rowEl.appendChild(lbl);
+    row.forEach((v,j)=>{
+      const d=document.createElement('div');d.className='cm-cell';
+      d.style.cssText=`width:${cell}px;height:${cell}px;background:${heat(norm[i][j])};color:${norm[i][j]>.5?'#fff':'rgba(200,230,245,0.5)'};font-size:${v>99?8:10}px;border:1px solid rgba(0,212,255,0.08);`;
+      d.textContent=v||'';
+      d.title=`${CN[i]} → ${CN[j]}: ${v} (${(norm[i][j]*100).toFixed(0)}%)`;
+      rowEl.appendChild(d);
+    });
+    outer.appendChild(rowEl);
+  });
+  const ax=document.createElement('div');ax.style.cssText=`text-align:center;padding-left:${cell+gap}px;font-size:8px;color:rgba(200,230,245,0.2);margin-top:6px;letter-spacing:2px;`;ax.textContent='PREDICTED →';outer.appendChild(ax);
+  wrap.appendChild(outer);
+})();
+
+/* ═══════════ F1 RADAR ═══════════ */
+new Chart(document.getElementById('f1Radar'),{type:'radar',data:{labels:CS,datasets:[{label:'F1',data:PC.map(c=>+(c.f1*100).toFixed(1)),borderColor:'rgba(0,212,255,0.8)',backgroundColor:'rgba(0,212,255,0.08)',borderWidth:2,pointBackgroundColor:'#00d4ff',pointRadius:3},{label:'Precision',data:PC.map(c=>+(c.p*100).toFixed(1)),borderColor:'rgba(0,255,195,0.5)',backgroundColor:'rgba(0,255,195,0.04)',borderWidth:1.5,pointBackgroundColor:'#00ffc3',pointRadius:2,borderDash:[3,3]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:8,padding:10,color:'rgba(200,230,245,0.4)'}},tooltip:tooltipDef},scales:{r:{grid:{color:'rgba(0,212,255,0.08)'},angleLines:{color:'rgba(0,212,255,0.08)'},pointLabels:{color:'rgba(200,230,245,0.4)',font:{size:9}},ticks:{color:'rgba(200,230,245,0.2)',font:{size:8},stepSize:20,backdropColor:'transparent'},min:0,max:100}}}});
+
+/* ═══════════ METRICS TABLE ═══════════ */
+(()=>{
+  const tb=document.getElementById('mtBody');
+  PC.forEach((m,i)=>{
+    const f=+(m.f1*100).toFixed(1);
+    const bc=m.f1>.7?'var(--c2)':m.f1>.4?'var(--c1)':'var(--c4)';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${COLS[i]};margin-right:8px;box-shadow:0 0 6px ${COLS[i]}"></span><span style="color:rgba(200,230,245,0.8)">${CN[i]}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;color:${m.p>.5?'rgba(200,230,245,0.7)':'var(--c4)'}">${(m.p*100).toFixed(1)}%</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:${m.r>.5?'rgba(200,230,245,0.7)':'var(--c4)'}">${(m.r*100).toFixed(1)}%</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${bc}">${f}%</td>
+      <td style="font-family:'JetBrains Mono',monospace;color:rgba(200,230,245,0.3)">${m.s}</td>
+      <td><div class="mt-bar-bg"><div class="mt-bar-fill" style="width:${f}%;background:${bc}"></div></div></td>`;
+    tb.appendChild(tr);
+  });
+})();
+
+/* ═══════════ CHAIN FINDER ═══════════ */
+function runChain(){
+  const cls=document.getElementById('chainCls').value;
+  const ml=+document.getElementById('chainMin').value||4;
+  const mc=+document.getElementById('chainConf').value||70;
+  const DEMO=[
+    {id:'IMG_0445_seq14',cls:'Prochlorococcus',len:9,conf:82,date:'2024-03-12',depth:'45m'},
+    {id:'IMG_1203_seq07',cls:'Synechococcus',len:7,conf:91,date:'2024-03-18',depth:'20m'},
+    {id:'IMG_0882_seq03',cls:'Picocyanobacteria',len:6,conf:76,date:'2024-03-15',depth:'35m'},
+    {id:'IMG_0334_seq21',cls:'Nanophytoplanton',len:5,conf:88,date:'2024-04-02',depth:'15m'},
+    {id:'IMG_1567_seq09',cls:'Crocosphaera',len:4,conf:73,date:'2024-04-08',depth:'10m'},
+  ].filter(c=>(!cls||c.cls===cls)&&c.len>=ml&&c.conf>=mc);
+  const el=document.getElementById('chainResult');
+  if(!DEMO.length){el.innerHTML='<div class="chain-empty"><div class="chain-empty-icon" style="font-size:20px">🔍</div><div class="chain-empty-t">No chains match — try lower thresholds</div></div>';return;}
+  const mx=Math.max(...DEMO.map(c=>c.len));
+  el.innerHTML=`<div style="width:100%">
+    <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:9px;color:rgba(200,230,245,0.2);letter-spacing:1.5px;font-family:'JetBrains Mono',monospace">
+      <span>ID</span><span>LEN</span><span>CONF</span><span>DATE</span><span>DEPTH</span>
+    </div>
+    ${DEMO.map((c,i)=>`<div class="chain-entry">
+      <div class="chain-rank">${i+1}</div>
+      <div style="flex:1"><div class="chain-id">${c.id}</div><div class="chain-cls">${c.cls}</div></div>
+      <div class="chain-bar"><div class="chain-bar-fill" style="width:${(c.len/mx*100).toFixed(0)}%"></div></div>
+      <div class="chain-len">${c.len}</div>
+      <div class="chain-conf">${c.conf}%</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(200,230,245,0.25);width:76px;text-align:right">${c.date}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(200,230,245,0.25);width:36px;text-align:right">${c.depth}</div>
+    </div>`).join('')}
+    <div style="margin-top:10px;font-size:10px;color:rgba(200,230,245,0.2);font-style:italic">⚡ Demo data · Connect CSV for live results · ${DEMO.length} result${DEMO.length>1?'s':''}</div>
+  </div>`;
+}
+</script>
+</body>
+</html>
