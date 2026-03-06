@@ -799,6 +799,7 @@ body:has(button:hover) #cursor-ring{width:52px;height:52px;border-color:rgba(0,2
     <div class="chip chip-c3">Mixed FP16 · A100</div>
     <div class="chip chip-c5">Logit-Adjusted CE</div>
     <div class="chip chip-c6">Balanced Sampling</div>
+    <div class="chip" id="live-badge" style="display:none;background:rgba(0,255,136,0.1);color:#00ff88;border:1px solid rgba(0,255,136,0.25)"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#00ff88;box-shadow:0 0 8px #00ff88;margin-right:5px;flex-shrink:0;animation:pulse 2s ease-in-out infinite"></span>Live</div>
   </div>
   <h1 class="hero-title">
     Phytoplankton<br><span class="grad">Classification</span>
@@ -842,7 +843,7 @@ body:has(button:hover) #cursor-ring{width:52px;height:52px;border-color:rgba(0,2
   <div class="glass glass-hover tilt stat">
     <div class="stat-icon si-c6">F1</div>
     <div class="stat-lbl">Macro F1</div>
-    <div class="stat-val">0.50</div>
+    <div class="stat-val" id="f1-stat-val">0.50</div>
     <div class="stat-note">110× class imbalance</div>
     <div class="stat-accent-line" style="background:var(--c6)"></div>
   </div>
@@ -1356,19 +1357,26 @@ window.addEventListener('scroll',()=>{
   navs.forEach(n=>{n.classList.toggle('active',n.getAttribute('href')==='#'+cur);});
 });
 
-/* ═══════════ DATA ═══════════ */
-const CN=['Crocosphaera','Cyanobacteria','Mineral particles','Nanophytoplanton','Nitzschia','Picocyanobacteria','Prochlorococcus','Synechococcus'];
-const CS=['Croco','Cyano','Mineral','Nanophyto','Nitzschia','PicoCyano','Prochloro','Synecho'];
-const CC=[66,37,239,3503,42,4071,2210,305];
-const COLS=['#00d4ff','#00ffc3','#a78bfa','#ff6b35','#ffd700','#f472b6','#60d9fa','#4ade80'];
-const TRAIN_ACC=[.5803,.5751,.5728,.5862,.5816,.6018,.6148,.5895,.5934,.5866,.6102,.6074,.6051,.6054,.6209,.6075,.6146,.6306,.6338,.6277,.6247,.6350];
-const VAL_ACC=[.5866,.5866,.5905,.5871,.5909,.5881,.5895,.5986,.5933,.5857,.5885,.5890,.5943,.5933,.5924,.6000,.6000,.6043,.6062,.5971,.6038,.6019];
-const TRAIN_LOSS=[1.0381,1.0546,1.0116,1.0113,1.0130,.9755,.9663,1.0009,.9859,.9885,.9488,.9642,.9609,.9490,.9200,.9445,.9160,.8881,.8924,.8876,.8841,.8627];
-const VAL_LOSS=[.9313,.9364,.9293,.9322,.9288,.9395,.9284,.9226,.9216,.9287,.9244,.9230,.9228,.9215,.9185,.9031,.9024,.9110,.8994,.9143,.9003,.9054];
-const CM=[[2,3,0,4,0,2,0,2],[2,3,2,0,0,0,0,0],[0,1,46,0,0,0,0,1],[21,10,0,426,3,187,37,17],[0,2,0,0,7,0,0,0],[3,0,0,82,0,644,85,0],[1,0,0,33,0,285,123,0],[7,4,0,25,1,3,2,19]];
-const PC=[{p:.0556,r:.1538,f1:.0816,s:13},{p:.1304,r:.4286,f1:.200,s:7},{p:.9583,r:.9583,f1:.9583,s:48},{p:.7474,r:.6077,f1:.6703,s:701},{p:.6364,r:.7778,f1:.700,s:9},{p:.5745,r:.7912,f1:.6656,s:814},{p:.4980,r:.2783,f1:.357,s:442},{p:.4872,r:.3115,f1:.380,s:61}];
+/* ═══════════ FALLBACK DATA (identical to V9 hardcoded values) ═══════════ */
+const FALLBACK={
+  val_accuracy:0.6062,macro_f1:0.5016,num_classes:8,
+  class_names:['Crocosphaera','Cyanobacteria','Mineral particles','Nanophytoplanton','Nitzschia','Picocyanobacteria','Prochlorococcus','Synechococcus'],
+  per_class_precision:{'Crocosphaera':.0556,'Cyanobacteria':.1304,'Mineral particles':.9583,'Nanophytoplanton':.7474,'Nitzschia':.6364,'Picocyanobacteria':.5745,'Prochlorococcus':.4980,'Synechococcus':.4872},
+  per_class_recall:{'Crocosphaera':.1538,'Cyanobacteria':.4286,'Mineral particles':.9583,'Nanophytoplanton':.6077,'Nitzschia':.7778,'Picocyanobacteria':.7912,'Prochlorococcus':.2783,'Synechococcus':.3115},
+  per_class_f1:{'Crocosphaera':.0816,'Cyanobacteria':.200,'Mineral particles':.9583,'Nanophytoplanton':.6703,'Nitzschia':.700,'Picocyanobacteria':.6656,'Prochlorococcus':.357,'Synechococcus':.380},
+  per_class_support:{'Crocosphaera':13,'Cyanobacteria':7,'Mineral particles':48,'Nanophytoplanton':701,'Nitzschia':9,'Picocyanobacteria':814,'Prochlorococcus':442,'Synechococcus':61},
+  confusion_matrix:[[2,3,0,4,0,2,0,2],[2,3,2,0,0,0,0,0],[0,1,46,0,0,0,0,1],[21,10,0,426,3,187,37,17],[0,2,0,0,7,0,0,0],[3,0,0,82,0,644,85,0],[1,0,0,33,0,285,123,0],[7,4,0,25,1,3,2,19]],
+  training_history:{
+    acc:[.5803,.5751,.5728,.5862,.5816,.6018,.6148,.5895,.5934,.5866,.6102,.6074,.6051,.6054,.6209,.6075,.6146,.6306,.6338,.6277,.6247,.6350],
+    val_acc:[.5866,.5866,.5905,.5871,.5909,.5881,.5895,.5986,.5933,.5857,.5885,.5890,.5943,.5933,.5924,.6000,.6000,.6043,.6062,.5971,.6038,.6019],
+    loss:[1.0381,1.0546,1.0116,1.0113,1.0130,.9755,.9663,1.0009,.9859,.9885,.9488,.9642,.9609,.9490,.9200,.9445,.9160,.8881,.8924,.8876,.8841,.8627],
+    val_loss:[.9313,.9364,.9293,.9322,.9288,.9395,.9284,.9226,.9216,.9287,.9244,.9230,.9228,.9215,.9185,.9031,.9024,.9110,.8994,.9143,.9003,.9054]
+  }
+};
 
-/* ═══════════ COUNTERS ═══════════ */
+const COLS=['#00d4ff','#00ffc3','#a78bfa','#ff6b35','#ffd700','#f472b6','#60d9fa','#4ade80'];
+
+/* ═══════════ COUNTER UTIL ═══════════ */
 function cnt(id,target,dur,dec=0){
   const el=document.getElementById(id),s=performance.now();
   const step=n=>{
@@ -1377,92 +1385,118 @@ function cnt(id,target,dur,dec=0){
     if(p<1)requestAnimationFrame(step);
   };requestAnimationFrame(step);
 }
-setTimeout(()=>{cnt('n-cnt',12315,1400);cnt('k-cnt',10,700);cnt('acc-cnt',60.6,1200,1);},500);
 
-/* ═══════════ CLASS BARS ═══════════ */
-(()=>{
-  const max=Math.max(...CC),c=document.getElementById('cls-bars');
+/* ═══════════ DASHBOARD INIT ═══════════ */
+function initDashboard(d,live){
+  const CN=d.class_names;
+  const CS=CN.map(n=>n.split(' ')[0].substring(0,9));
+  const CC=CN.map(n=>d.per_class_support[n]||0);
+  const PC=CN.map(n=>({p:d.per_class_precision[n]||0,r:d.per_class_recall[n]||0,f1:d.per_class_f1[n]||0,s:d.per_class_support[n]||0}));
+  const TRAIN_ACC=d.training_history.acc||[];
+  const VAL_ACC=d.training_history.val_acc||[];
+  const TRAIN_LOSS=d.training_history.loss||[];
+  const VAL_LOSS=d.training_history.val_loss||[];
+  const CM=d.confusion_matrix;
+  const valAcc=d.val_accuracy;
+  const macroF1=d.macro_f1;
+
+  /* live badge — shown only on successful fetch */
+  if(live){const b=document.getElementById('live-badge');if(b)b.style.display='inline-flex';}
+
+  /* stat counters */
+  const totalVal=CC.reduce((a,b)=>a+b,0);
+  setTimeout(()=>{
+    cnt('n-cnt',Math.round(totalVal/0.2),1400);
+    cnt('k-cnt',CN.length,700);
+    cnt('acc-cnt',+(valAcc*100).toFixed(1),1200,1);
+  },500);
+
+  /* macro F1 stat card */
+  const f1el=document.getElementById('f1-stat-val');
+  if(f1el)f1el.textContent=macroF1.toFixed(2);
+
+  /* class distribution bars */
+  const max=Math.max(...CC);
+  const clsWrap=document.getElementById('cls-bars');
+  clsWrap.innerHTML='';
   CN.forEach((n,i)=>{
-    const r=document.createElement('div');r.className='cls-row';
-    r.innerHTML=`<div class="cls-name"><div class="cls-swatch" style="background:${COLS[i]}"></div>${n}</div>
-      <div class="cls-track"><div class="cls-fill" style="width:0%;background:${COLS[i]}" data-w="${(CC[i]/max*100).toFixed(1)}"></div></div>
+    const col=COLS[i%COLS.length];
+    const row=document.createElement('div');row.className='cls-row';
+    row.innerHTML=`<div class="cls-name"><div class="cls-swatch" style="background:${col}"></div>${n}</div>
+      <div class="cls-track"><div class="cls-fill" style="width:0%;background:${col}" data-w="${(CC[i]/max*100).toFixed(1)}"></div></div>
       <div class="cls-count">${CC[i].toLocaleString()}</div>`;
-    c.appendChild(r);
+    clsWrap.appendChild(row);
   });
   setTimeout(()=>document.querySelectorAll('.cls-fill').forEach(e=>{e.style.width=e.dataset.w+'%';}),400);
-})();
 
-/* ═══════════ CHART DEFAULTS ═══════════ */
-Chart.defaults.color='rgba(200,230,245,0.4)';
-Chart.defaults.font.family="'JetBrains Mono',monospace";
-Chart.defaults.font.size=10;
-const gridC='rgba(0,212,255,0.06)';
-const tooltipDef={backgroundColor:'rgba(4,15,30,0.95)',borderColor:'rgba(0,212,255,0.2)',borderWidth:1,padding:10};
+  /* chart defaults */
+  Chart.defaults.color='rgba(200,230,245,0.4)';
+  Chart.defaults.font.family="'JetBrains Mono',monospace";
+  Chart.defaults.font.size=10;
+  const gridC='rgba(0,212,255,0.06)';
+  const tooltipDef={backgroundColor:'rgba(4,15,30,0.95)',borderColor:'rgba(0,212,255,0.2)',borderWidth:1,padding:10};
 
-/* ═══════════ DONUT ═══════════ */
-new Chart(document.getElementById('donutC'),{type:'doughnut',data:{labels:CN,datasets:[{data:CC,backgroundColor:COLS.map(c=>c+'88'),borderColor:COLS,borderWidth:1.5,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tooltipDef,callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw.toLocaleString()}`}}},cutout:'68%'}});
+  /* donut */
+  new Chart(document.getElementById('donutC'),{type:'doughnut',data:{labels:CN,datasets:[{data:CC,backgroundColor:COLS.slice(0,CN.length).map(c=>c+'88'),borderColor:COLS.slice(0,CN.length),borderWidth:1.5,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tooltipDef,callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw.toLocaleString()}`}}},cutout:'68%'}});
 
-/* ═══════════ TRAINING CHARTS ═══════════ */
-const epochs=Array.from({length:22},(_,i)=>i+1);
-const lineOpts={responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{font:{size:10},boxWidth:9,padding:12,color:'rgba(200,230,245,0.5)'}},tooltip:tooltipDef},scales:{x:{grid:{color:gridC},ticks:{color:'rgba(200,230,245,0.25)',font:{size:9}}},y:{grid:{color:gridC},ticks:{color:'rgba(200,230,245,0.25)',font:{size:9}}}}};
+  /* training charts — y-axis bounds computed from actual data */
+  const epochs=Array.from({length:TRAIN_ACC.length},(_,i)=>i+1);
+  const lineOpts={responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{font:{size:10},boxWidth:9,padding:12,color:'rgba(200,230,245,0.5)'}},tooltip:tooltipDef},scales:{x:{grid:{color:gridC},ticks:{color:'rgba(200,230,245,0.25)',font:{size:9}}},y:{grid:{color:gridC},ticks:{color:'rgba(200,230,245,0.25)',font:{size:9}}}}};
+  const accMin=Math.floor(Math.min(...VAL_ACC,...TRAIN_ACC)*100)-2;
+  const accMax=Math.ceil(Math.max(...VAL_ACC,...TRAIN_ACC)*100)+2;
+  new Chart(document.getElementById('accChart'),{type:'line',data:{labels:epochs,datasets:[{label:'Train Acc',data:TRAIN_ACC.map(v=>(v*100).toFixed(2)),borderColor:'rgba(0,212,255,0.85)',backgroundColor:'rgba(0,212,255,0.06)',tension:0.38,borderWidth:2,pointRadius:2,fill:true},{label:'Val Acc',data:VAL_ACC.map(v=>(v*100).toFixed(2)),borderColor:'rgba(0,255,195,0.8)',backgroundColor:'rgba(0,255,195,0.04)',tension:0.38,borderWidth:2,pointRadius:2,fill:true,borderDash:[4,2]}]},options:{...lineOpts,scales:{...lineOpts.scales,y:{...lineOpts.scales.y,min:accMin,max:accMax,ticks:{...lineOpts.scales.y.ticks,callback:v=>v+'%'}}}}});
+  new Chart(document.getElementById('lossChart'),{type:'line',data:{labels:epochs,datasets:[{label:'Train Loss',data:TRAIN_LOSS,borderColor:'rgba(255,77,109,0.8)',backgroundColor:'rgba(255,77,109,0.05)',tension:0.38,borderWidth:2,pointRadius:2,fill:true},{label:'Val Loss',data:VAL_LOSS,borderColor:'rgba(167,139,250,0.8)',backgroundColor:'rgba(167,139,250,0.04)',tension:0.38,borderWidth:2,pointRadius:2,fill:true,borderDash:[4,2]}]},options:{...lineOpts,scales:{...lineOpts.scales,y:{...lineOpts.scales.y,min:+(Math.min(...VAL_LOSS,...TRAIN_LOSS)-.05).toFixed(2),max:+(Math.max(...VAL_LOSS,...TRAIN_LOSS)+.05).toFixed(2)}}}});
 
-new Chart(document.getElementById('accChart'),{type:'line',data:{labels:epochs,datasets:[{label:'Train Acc',data:TRAIN_ACC.map(v=>(v*100).toFixed(2)),borderColor:'rgba(0,212,255,0.85)',backgroundColor:'rgba(0,212,255,0.06)',tension:0.38,borderWidth:2,pointRadius:2,fill:true},{label:'Val Acc',data:VAL_ACC.map(v=>(v*100).toFixed(2)),borderColor:'rgba(0,255,195,0.8)',backgroundColor:'rgba(0,255,195,0.04)',tension:0.38,borderWidth:2,pointRadius:2,fill:true,borderDash:[4,2]}]},options:{...lineOpts,scales:{...lineOpts.scales,y:{...lineOpts.scales.y,min:55,max:65,ticks:{...lineOpts.scales.y.ticks,callback:v=>v+'%'}}}}});
+  /* accuracy ring */
+  (()=>{
+    const cv=document.getElementById('accRing'),ctx=cv.getContext('2d');
+    const cx=60,cy=60,r=48,lw=8;
+    ctx.clearRect(0,0,120,120);
+    ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,Math.PI*1.5);ctx.strokeStyle='rgba(0,212,255,0.08)';ctx.lineWidth=lw;ctx.stroke();
+    const g=ctx.createLinearGradient(cx-r,cy,cx+r,cy);g.addColorStop(0,'#00d4ff');g.addColorStop(1,'#00ffc3');
+    ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+Math.PI*2*valAcc);ctx.strokeStyle=g;ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font='bold 15px "Outfit",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((valAcc*100).toFixed(1)+'%',cx,cy-5);
+    ctx.fillStyle='rgba(200,230,245,0.3)';ctx.font='8px "Outfit",sans-serif';ctx.fillText('val_acc',cx,cy+9);
+  })();
 
-new Chart(document.getElementById('lossChart'),{type:'line',data:{labels:epochs,datasets:[{label:'Train Loss',data:TRAIN_LOSS,borderColor:'rgba(255,77,109,0.8)',backgroundColor:'rgba(255,77,109,0.05)',tension:0.38,borderWidth:2,pointRadius:2,fill:true},{label:'Val Loss',data:VAL_LOSS,borderColor:'rgba(167,139,250,0.8)',backgroundColor:'rgba(167,139,250,0.04)',tension:0.38,borderWidth:2,pointRadius:2,fill:true,borderDash:[4,2]}]},options:{...lineOpts,scales:{...lineOpts.scales,y:{...lineOpts.scales.y,min:0.85,max:1.1}}}});
-
-/* ═══════════ ACC RING ═══════════ */
-(()=>{
-  const cv=document.getElementById('accRing'),ctx=cv.getContext('2d');
-  const cx=60,cy=60,r=48,lw=8,acc=.6062;
-  ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,Math.PI*1.5);ctx.strokeStyle='rgba(0,212,255,0.08)';ctx.lineWidth=lw;ctx.stroke();
-  const g=ctx.createLinearGradient(cx-r,cy,cx+r,cy);g.addColorStop(0,'#00d4ff');g.addColorStop(1,'#00ffc3');
-  ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+Math.PI*2*acc);ctx.strokeStyle=g;ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();
-  ctx.fillStyle='#fff';ctx.font='bold 15px "Outfit",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('60.6%',cx,cy-5);
-  ctx.fillStyle='rgba(200,230,245,0.3)';ctx.font='8px "Outfit",sans-serif';ctx.fillText('val_acc',cx,cy+9);
-})();
-
-/* ═══════════ CONFUSION MATRIX ═══════════ */
-(()=>{
-  const wrap=document.getElementById('cmContainer');
-  const cell=44,gap=3;
-  const norm=CM.map(r=>{const s=r.reduce((a,b)=>a+b,0);return r.map(v=>s?v/s:0);});
-  function heat(v){
-    if(!v)return'rgba(4,15,30,0.7)';
-    const r=Math.round(0+v*0),g=Math.round(v*212),b=Math.round(v*255);
-    return`rgba(${r},${g},${b},${.15+v*.75})`;
-  }
-  const outer=document.createElement('div');outer.style.cssText='display:inline-block;';
-  // top labels
-  const topRow=document.createElement('div');topRow.style.cssText=`display:flex;padding-left:${cell+gap+2}px;gap:${gap}px;margin-bottom:${gap}px;`;
-  CS.forEach(n=>{const d=document.createElement('div');d.className='cm-col-lbl';d.style.cssText=`width:${cell}px;height:62px;font-size:8px;`;d.textContent=n;topRow.appendChild(d);});
-  outer.appendChild(topRow);
-  CM.forEach((row,i)=>{
-    const rowEl=document.createElement('div');rowEl.style.cssText=`display:flex;gap:${gap}px;align-items:center;margin-bottom:${gap}px;`;
-    const lbl=document.createElement('div');lbl.className='cm-row-lbl';lbl.style.cssText=`width:${cell}px;font-size:8px;padding-right:5px;flex-shrink:0;`;lbl.textContent=CS[i];rowEl.appendChild(lbl);
-    row.forEach((v,j)=>{
-      const d=document.createElement('div');d.className='cm-cell';
-      d.style.cssText=`width:${cell}px;height:${cell}px;background:${heat(norm[i][j])};color:${norm[i][j]>.5?'#fff':'rgba(200,230,245,0.5)'};font-size:${v>99?8:10}px;border:1px solid rgba(0,212,255,0.08);`;
-      d.textContent=v||'';
-      d.title=`${CN[i]} → ${CN[j]}: ${v} (${(norm[i][j]*100).toFixed(0)}%)`;
-      rowEl.appendChild(d);
+  /* confusion matrix */
+  (()=>{
+    const wrap=document.getElementById('cmContainer');
+    wrap.innerHTML='';
+    const cell=44,gap=3;
+    const norm=CM.map(row=>{const s=row.reduce((a,b)=>a+b,0);return row.map(v=>s?v/s:0);});
+    function heat(v){if(!v)return'rgba(4,15,30,0.7)';return`rgba(0,${Math.round(v*212)},${Math.round(v*255)},${.15+v*.75})`;}
+    const outer=document.createElement('div');outer.style.cssText='display:inline-block;';
+    const topRow=document.createElement('div');topRow.style.cssText=`display:flex;padding-left:${cell+gap+2}px;gap:${gap}px;margin-bottom:${gap}px;`;
+    CS.forEach(n=>{const el=document.createElement('div');el.className='cm-col-lbl';el.style.cssText=`width:${cell}px;height:62px;font-size:8px;`;el.textContent=n;topRow.appendChild(el);});
+    outer.appendChild(topRow);
+    CM.forEach((row,i)=>{
+      const rowEl=document.createElement('div');rowEl.style.cssText=`display:flex;gap:${gap}px;align-items:center;margin-bottom:${gap}px;`;
+      const lbl=document.createElement('div');lbl.className='cm-row-lbl';lbl.style.cssText=`width:${cell}px;font-size:8px;padding-right:5px;flex-shrink:0;`;lbl.textContent=CS[i];rowEl.appendChild(lbl);
+      row.forEach((v,j)=>{
+        const el=document.createElement('div');el.className='cm-cell';
+        el.style.cssText=`width:${cell}px;height:${cell}px;background:${heat(norm[i][j])};color:${norm[i][j]>.5?'#fff':'rgba(200,230,245,0.5)'};font-size:${v>99?8:10}px;border:1px solid rgba(0,212,255,0.08);`;
+        el.textContent=v||'';el.title=`${CN[i]} → ${CN[j]}: ${v} (${(norm[i][j]*100).toFixed(0)}%)`;
+        rowEl.appendChild(el);
+      });
+      outer.appendChild(rowEl);
     });
-    outer.appendChild(rowEl);
-  });
-  const ax=document.createElement('div');ax.style.cssText=`text-align:center;padding-left:${cell+gap}px;font-size:8px;color:rgba(200,230,245,0.2);margin-top:6px;letter-spacing:2px;`;ax.textContent='PREDICTED →';outer.appendChild(ax);
-  wrap.appendChild(outer);
-})();
+    const ax=document.createElement('div');ax.style.cssText=`text-align:center;padding-left:${cell+gap}px;font-size:8px;color:rgba(200,230,245,0.2);margin-top:6px;letter-spacing:2px;`;ax.textContent='PREDICTED →';outer.appendChild(ax);
+    wrap.appendChild(outer);
+  })();
 
-/* ═══════════ F1 RADAR ═══════════ */
-new Chart(document.getElementById('f1Radar'),{type:'radar',data:{labels:CS,datasets:[{label:'F1',data:PC.map(c=>+(c.f1*100).toFixed(1)),borderColor:'rgba(0,212,255,0.8)',backgroundColor:'rgba(0,212,255,0.08)',borderWidth:2,pointBackgroundColor:'#00d4ff',pointRadius:3},{label:'Precision',data:PC.map(c=>+(c.p*100).toFixed(1)),borderColor:'rgba(0,255,195,0.5)',backgroundColor:'rgba(0,255,195,0.04)',borderWidth:1.5,pointBackgroundColor:'#00ffc3',pointRadius:2,borderDash:[3,3]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:8,padding:10,color:'rgba(200,230,245,0.4)'}},tooltip:tooltipDef},scales:{r:{grid:{color:'rgba(0,212,255,0.08)'},angleLines:{color:'rgba(0,212,255,0.08)'},pointLabels:{color:'rgba(200,230,245,0.4)',font:{size:9}},ticks:{color:'rgba(200,230,245,0.2)',font:{size:8},stepSize:20,backdropColor:'transparent'},min:0,max:100}}}});
+  /* F1 radar */
+  new Chart(document.getElementById('f1Radar'),{type:'radar',data:{labels:CS,datasets:[{label:'F1',data:PC.map(c=>+(c.f1*100).toFixed(1)),borderColor:'rgba(0,212,255,0.8)',backgroundColor:'rgba(0,212,255,0.08)',borderWidth:2,pointBackgroundColor:'#00d4ff',pointRadius:3},{label:'Precision',data:PC.map(c=>+(c.p*100).toFixed(1)),borderColor:'rgba(0,255,195,0.5)',backgroundColor:'rgba(0,255,195,0.04)',borderWidth:1.5,pointBackgroundColor:'#00ffc3',pointRadius:2,borderDash:[3,3]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:8,padding:10,color:'rgba(200,230,245,0.4)'}},tooltip:tooltipDef},scales:{r:{grid:{color:'rgba(0,212,255,0.08)'},angleLines:{color:'rgba(0,212,255,0.08)'},pointLabels:{color:'rgba(200,230,245,0.4)',font:{size:9}},ticks:{color:'rgba(200,230,245,0.2)',font:{size:8},stepSize:20,backdropColor:'transparent'},min:0,max:100}}}});
 
-/* ═══════════ METRICS TABLE ═══════════ */
-(()=>{
+  /* per-class metrics table */
   const tb=document.getElementById('mtBody');
+  tb.innerHTML='';
   PC.forEach((m,i)=>{
     const f=+(m.f1*100).toFixed(1);
     const bc=m.f1>.7?'var(--c2)':m.f1>.4?'var(--c1)':'var(--c4)';
+    const col=COLS[i%COLS.length];
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${COLS[i]};margin-right:8px;box-shadow:0 0 6px ${COLS[i]}"></span><span style="color:rgba(200,230,245,0.8)">${CN[i]}</span></td>
+    tr.innerHTML=`<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col};margin-right:8px;box-shadow:0 0 6px ${col}"></span><span style="color:rgba(200,230,245,0.8)">${CN[i]}</span></td>
       <td style="font-family:'JetBrains Mono',monospace;color:${m.p>.5?'rgba(200,230,245,0.7)':'var(--c4)'}">${(m.p*100).toFixed(1)}%</td>
       <td style="font-family:'JetBrains Mono',monospace;color:${m.r>.5?'rgba(200,230,245,0.7)':'var(--c4)'}">${(m.r*100).toFixed(1)}%</td>
       <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${bc}">${f}%</td>
@@ -1470,7 +1504,13 @@ new Chart(document.getElementById('f1Radar'),{type:'radar',data:{labels:CS,datas
       <td><div class="mt-bar-bg"><div class="mt-bar-fill" style="width:${f}%;background:${bc}"></div></div></td>`;
     tb.appendChild(tr);
   });
-})();
+}
+
+/* ═══════════ FETCH LIVE DATA → FALLBACK ON ERROR ═══════════ */
+fetch('https://raw.githubusercontent.com/adityaram-2003/phytoplankton-classification/main/metrics.json',{cache:'no-cache'})
+  .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
+  .then(d=>initDashboard(d,true))
+  .catch(()=>initDashboard(FALLBACK,false));
 
 /* ═══════════ CHAIN FINDER ═══════════ */
 function runChain(){
