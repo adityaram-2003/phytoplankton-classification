@@ -799,11 +799,11 @@ body:has(button:hover) #cursor-ring{width:52px;height:52px;border-color:rgba(0,2
     <div class="chip chip-c3">Mixed FP16 · A100</div>
     <div class="chip chip-c5">Logit-Adjusted CE</div>
     <div class="chip chip-c6">Balanced Sampling</div>
-    <div class="chip" id="live-badge" style="display:none;background:rgba(0,255,136,0.1);color:#00ff88;border:1px solid rgba(0,255,136,0.25)"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#00ff88;box-shadow:0 0 8px #00ff88;margin-right:5px;flex-shrink:0;animation:pulse 2s ease-in-out infinite"></span>Live</div>
   </div>
   <h1 class="hero-title">
     Phytoplankton<br><span class="grad">Classification</span>
   </h1>
+  <div id="live-badge" style="display:none;align-items:center;gap:6px;font-size:10px;font-weight:700;color:#00ffc3;background:rgba(0,255,195,0.1);border:1px solid rgba(0,255,195,0.25);padding:4px 12px;border-radius:99px;margin-top:12px"><div style="width:6px;height:6px;border-radius:50%;background:#00ffc3;box-shadow:0 0 8px #00ffc3;animation:pulse 2s infinite"></div>Live Data · GitHub</div>
   <p class="hero-sub">
     Deep-learning pipeline for autonomous microscopy-based identification of 8–10 marine phytoplankton classes.
     Trained on 12,315 images across 2 library sources with two-stage fine-tuning and imbalance correction.
@@ -1361,6 +1361,7 @@ window.addEventListener('scroll',()=>{
 const FALLBACK={
   val_accuracy:0.6062,macro_f1:0.5016,num_classes:8,
   class_names:['Crocosphaera','Cyanobacteria','Mineral particles','Nanophytoplanton','Nitzschia','Picocyanobacteria','Prochlorococcus','Synechococcus'],
+  dataset:{total_images:10473,train_size:8378,val_size:2095},
   per_class_precision:{'Crocosphaera':.0556,'Cyanobacteria':.1304,'Mineral particles':.9583,'Nanophytoplanton':.7474,'Nitzschia':.6364,'Picocyanobacteria':.5745,'Prochlorococcus':.4980,'Synechococcus':.4872},
   per_class_recall:{'Crocosphaera':.1538,'Cyanobacteria':.4286,'Mineral particles':.9583,'Nanophytoplanton':.6077,'Nitzschia':.7778,'Picocyanobacteria':.7912,'Prochlorococcus':.2783,'Synechococcus':.3115},
   per_class_f1:{'Crocosphaera':.0816,'Cyanobacteria':.200,'Mineral particles':.9583,'Nanophytoplanton':.6703,'Nitzschia':.700,'Picocyanobacteria':.6656,'Prochlorococcus':.357,'Synechococcus':.380},
@@ -1401,12 +1402,13 @@ function initDashboard(d,live){
   const macroF1=d.macro_f1;
 
   /* live badge — shown only on successful fetch */
-  if(live){const b=document.getElementById('live-badge');if(b)b.style.display='inline-flex';}
+  if(live){const b=document.getElementById('live-badge');if(b){b.style.display='inline-flex';}}
 
-  /* stat counters */
-  const totalVal=CC.reduce((a,b)=>a+b,0);
+  /* stat counters — use dataset object when present, derive from support as fallback */
+  const ds=d.dataset||{};
+  const totalImages=ds.total_images||Math.round(CC.reduce((a,b)=>a+b,0)/0.2);
   setTimeout(()=>{
-    cnt('n-cnt',Math.round(totalVal/0.2),1400);
+    cnt('n-cnt',totalImages,1400);
     cnt('k-cnt',CN.length,700);
     cnt('acc-cnt',+(valAcc*100).toFixed(1),1200,1);
   },500);
