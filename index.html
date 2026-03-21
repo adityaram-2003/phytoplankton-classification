@@ -409,11 +409,20 @@ body{font-family:var(--font);background:var(--ink);color:#c8e8f5;display:flex;mi
   font-size:9.5px;font-weight:700;color:var(--c1);font-family:var(--mono);margin-top:2px}
 
 /* Chain particle image */
-.chain-img-slot{width:52px;height:52px;border-radius:8px;background:rgba(0,212,255,.05);
-  border:1px solid rgba(0,212,255,.14);flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  overflow:hidden;position:relative}
-.chain-img-slot img{width:100%;height:100%;object-fit:cover;border-radius:7px;filter:brightness(1.2) contrast(1.1)}
-.chain-img-placeholder{font-size:20px;opacity:.3}
+.chain-img-slot{width:84px;height:84px;border-radius:10px;background:rgba(0,0,0,.65);
+  border:1px solid rgba(0,212,255,.22);flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;position:relative;cursor:pointer;
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1),border-color .25s,box-shadow .25s}
+.chain-img-slot:hover{transform:scale(1.06);border-color:rgba(0,212,255,.5);box-shadow:0 0 22px rgba(0,212,255,.3)}
+.chain-img-slot img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;filter:brightness(1.35) contrast(1.2)}
+.chain-img-placeholder{font-size:22px;opacity:.18}
+.ci-esd{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:7px;color:rgba(0,212,255,.8);font-family:var(--mono);background:rgba(0,0,0,.65);padding:1px 0}
+.ci-live{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--c2);box-shadow:0 0 6px var(--c2);animation:pulse 2s infinite}
+/* Modal */
+#imgModal{display:none;position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,.93);align-items:center;justify-content:center;cursor:pointer;flex-direction:column;gap:16px}
+#imgModal.open{display:flex}
+#imgModal img{max-width:80vw;max-height:75vh;border-radius:12px;border:1px solid rgba(0,212,255,.3);image-rendering:pixelated;filter:brightness(1.35) contrast(1.2);box-shadow:0 0 60px rgba(0,212,255,.2)}
+#imgModalInfo{background:rgba(3,12,25,.9);border:1px solid rgba(0,212,255,.2);border-radius:10px;padding:10px 20px;font-size:11px;color:rgba(200,232,245,.6);font-family:var(--mono)}
 .chain-id{font-size:11.5px;font-weight:600;color:rgba(200,232,245,.82)}
 .chain-cls{font-size:10px;color:rgba(200,232,245,.32);margin-top:2px}
 .chain-meta{font-size:9.5px;color:rgba(200,232,245,.25);margin-top:3px;font-family:var(--mono)}
@@ -1397,6 +1406,13 @@ body{font-family:var(--font);background:var(--ink);color:#c8e8f5;display:flex;mi
 
 </main>
 
+<!-- Image modal -->
+<div id="imgModal" onclick="this.classList.remove('open')">
+  <img id="imgModalImg" src="" alt="">
+  <div id="imgModalInfo"></div>
+  <div style="font-size:10px;color:rgba(200,232,245,.25);font-family:var(--mono);margin-top:4px">click anywhere to close</div>
+</div>
+
 <!-- Floating pill -->
 <div id="pill">
   <div class="pi" onclick="go('#hero')">🏠<div class="ptt">Dashboard</div></div>
@@ -1822,137 +1838,116 @@ const elongFreq=[3820,1650,680,320,185,95,42];
 mkChart('histElong',{type:'bar',data:{labels:elongBins,datasets:[{label:'Count',data:elongFreq,backgroundColor:'rgba(244,114,182,.42)',borderColor:'rgba(244,114,182,.7)',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:td},scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.28)',font:{size:8}}}}}});
 
 
-// Generate synthetic FlowCAM-style microscopy SVG for each species
+// ─── Cell image preview (synthetic SVG until real images loaded) ──────────
 function cellSVG(cls, len, esd) {
-  const w=52, h=52;
-  const bg='#040e1c';
-  
-  // Species-specific morphology
-  const morphs = {
-    'Crocosphaera':    {shape:'colony',  r:5,  fill:'#b8d4f0', glow:'#60a8e0', n:len},
-    'Cyanobacteria':   {shape:'filament',r:3,  fill:'#c8e8b0', glow:'#7dc85a', n:len},
-    'Prochlorococcus': {shape:'sphere',  r:2.5,fill:'#a0c8f8', glow:'#4090e0', n:1},
-    'Nitzschia':       {shape:'pennate', r:3,  fill:'#f0e8b0', glow:'#d0b840', n:len},
-    'Synechococcus':   {shape:'oval',    r:3.5,fill:'#f0b8a0', glow:'#e06030', n:len},
-    'Nanophytoplanton':{shape:'sphere',  r:6,  fill:'#c0d8f0', glow:'#5090d0', n:1},
-    'Picocyanobacteria':{shape:'sphere', r:2,  fill:'#b0e8d0', glow:'#30c080', n:1},
-  };
-  const m = morphs[cls] || morphs['Nanophytoplanton'];
-  const cx=w/2, cy=h/2;
-  
-  let cells = '';
-  
-  if (m.shape === 'filament' || m.shape === 'pennate') {
-    // Horizontal chain of cells
-    const cellW = m.shape==='pennate' ? m.r*3 : m.r*2;
-    const gap = 1;
-    const total = Math.min(len, 6);
-    const startX = cx - (total*(cellW*2+gap))/2 + cellW;
-    for (let i=0; i<total; i++) {
-      const x = startX + i*(cellW*2+gap);
-      if (m.shape === 'pennate') {
-        cells += `<ellipse cx="${x}" cy="${cy}" rx="${cellW}" ry="${m.r}" fill="${m.fill}" opacity="0.85" filter="url(#gf)"/>`;
-        cells += `<line x1="${x-cellW}" y1="${cy}" x2="${x+cellW}" y2="${cy}" stroke="${m.glow}" stroke-width="0.5" opacity="0.4"/>`;
-      } else {
-        cells += `<circle cx="${x}" cy="${cy}" r="${m.r}" fill="${m.fill}" opacity="0.85" filter="url(#gf)"/>`;
-      }
-      if (i < total-1) cells += `<line x1="${x+m.r}" y1="${cy}" x2="${x+cellW*2+gap-m.r}" y2="${cy}" stroke="${m.glow}" stroke-width="0.6" opacity="0.3"/>`;
-    }
-  } else if (m.shape === 'colony') {
-    // Scattered colonial cells
-    const positions = [[0,0],[8,-6],[-7,-5],[6,7],[-5,8],[9,2],[-8,3],[3,-9]];
-    const total = Math.min(len, 8);
-    for (let i=0; i<total; i++) {
-      const [dx,dy] = positions[i]||[Math.cos(i)*9, Math.sin(i)*9];
-      cells += `<circle cx="${cx+dx}" cy="${cy+dy}" r="${m.r}" fill="${m.fill}" opacity="0.8" filter="url(#gf)"/>`;
-    }
-    // Colony outline
-    cells += `<circle cx="${cx}" cy="${cy}" r="${m.r*3.5}" fill="none" stroke="${m.glow}" stroke-width="0.5" opacity="0.25" stroke-dasharray="2,2"/>`;
-  } else if (m.shape === 'oval') {
-    const total = Math.min(len, 5);
-    const startX = cx - (total*m.r*2.5)/2 + m.r;
-    for (let i=0; i<total; i++) {
-      const x = startX + i*(m.r*2.5);
-      cells += `<ellipse cx="${x}" cy="${cy}" rx="${m.r*1.4}" ry="${m.r}" fill="${m.fill}" opacity="0.85" filter="url(#gf)"/>`;
-    }
-  } else {
-    // Single sphere (Prochlorococcus, Nanophyto, Picocyano)
-    cells += `<circle cx="${cx}" cy="${cy}" r="${m.r*2}" fill="${m.fill}" opacity="0.15" filter="url(#gf)"/>`;
-    cells += `<circle cx="${cx}" cy="${cy}" r="${m.r}" fill="${m.fill}" opacity="0.9" filter="url(#gf)"/>`;
-    cells += `<circle cx="${cx-m.r*0.3}" cy="${cy-m.r*0.3}" r="${m.r*0.3}" fill="white" opacity="0.4"/>`;
+  var s = {
+    Crocosphaera:    {f:'#b8d4f0',g:'#60a8e0',t:'colony'},
+    Cyanobacteria:   {f:'#c8e8b0',g:'#7dc85a',t:'filament'},
+    Prochlorococcus: {f:'#a0c8f8',g:'#4090e0',t:'sphere'},
+    Nitzschia:       {f:'#f0e8b0',g:'#d0b840',t:'pennate'},
+    Synechococcus:   {f:'#f0b8a0',g:'#e06030',t:'oval'},
+    Nanophytoplanton:{f:'#c0d8f0',g:'#5090d0',t:'sphere'},
+    Picocyanobacteria:{f:'#b0e8d0',g:'#30c080',t:'sphere'}
+  }[cls] || {f:'#c0d8f0',g:'#5090d0',t:'sphere'};
+  var n=Math.min(len,6), cx=26, cy=26, c='';
+  if(s.t==='filament'||s.t==='pennate'){
+    var rw=s.t==='pennate'?6:4,st=48/n;
+    for(var i=0;i<n;i++){var x=2+st*i+st/2;c+='<ellipse cx="'+x+'" cy="26" rx="'+rw+'" ry="3" fill="'+s.f+'" opacity="0.85"/>';if(i<n-1)c+='<line x1="'+(x+rw)+'" y1="26" x2="'+(x+st-rw)+'" y2="26" stroke="'+s.g+'" stroke-width="0.8" opacity="0.4"/>';}
+  }else if(s.t==='colony'){
+    var p=[[0,0],[7,-5],[-6,-4],[5,6],[-4,7],[8,2],[-7,3]];
+    for(var i=0;i<Math.min(n,p.length);i++)c+='<circle cx="'+(cx+p[i][0])+'" cy="'+(cy+p[i][1])+'" r="4" fill="'+s.f+'" opacity="0.82"/>';
+    c+='<circle cx="26" cy="26" r="14" fill="none" stroke="'+s.g+'" stroke-width="0.6" opacity="0.2" stroke-dasharray="2,2"/>';
+  }else if(s.t==='oval'){
+    var st2=48/n;for(var i=0;i<n;i++){var x=2+st2*i+st2/2;c+='<ellipse cx="'+x+'" cy="26" rx="4.5" ry="3.5" fill="'+s.f+'" opacity="0.85"/>';}
+  }else{
+    c='<circle cx="26" cy="26" r="11" fill="'+s.f+'" opacity="0.12"/><circle cx="26" cy="26" r="5.5" fill="'+s.f+'" opacity="0.9"/><circle cx="23" cy="23" r="1.5" fill="white" opacity="0.4"/>';
   }
-  
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-    <defs>
-      <filter id="gf" x="-50%" y="-50%" width="200%" height="200%">
-        <feGaussianBlur stdDeviation="1.2" result="blur"/>
-        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-      </filter>
-      <radialGradient id="bg" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="#081828"/>
-        <stop offset="100%" stop-color="${bg}"/>
-      </radialGradient>
-    </defs>
-    <rect width="${w}" height="${h}" fill="url(#bg)"/>
-    <circle cx="${cx}" cy="${cy}" r="${w*0.45}" fill="none" stroke="${m.glow}" stroke-width="0.3" opacity="0.15"/>
-    ${cells}
-    <text x="2" y="${h-3}" font-size="5" fill="${m.glow}" opacity="0.6" font-family="monospace">${esd}µm</text>
-  </svg>`;
-  
-  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 52 52"><rect width="52" height="52" fill="#040e1c" rx="4"/><circle cx="26" cy="26" r="22" fill="none" stroke="'+s.g+'" stroke-width="0.4" opacity="0.15"/>'+c+'<text x="2" y="49" font-size="5" fill="'+s.g+'" opacity="0.7" font-family="monospace">'+esd+'um</text></svg>';
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
 }
 
-const DEMO_CHAINS=[
-  {id:'BFZ-Cast143/segimg_042',cls:'Crocosphaera',len:11,conf:84,cast:'BFZ-Cast143',depth:'10m',esd:3.2,note:'Possible Trichodesmium colony aggregate'},
-  {id:'BFZ-Cast111/segimg_234',cls:'Cyanobacteria',len:9,conf:81,cast:'BFZ-Cast111',depth:'5m',esd:2.8,note:'Long colonial chain — diazotroph candidate'},
-  {id:'BFZ-Cast94/segimg_118',cls:'Prochlorococcus',len:8,conf:86,cast:'BFZ-Cast94',depth:'10m',esd:1.1,note:'Unusual chain length for Prochlorococcus'},
-  {id:'BFZ-Cast73/segimg_507',cls:'Nitzschia',len:7,conf:91,cast:'BFZ-Cast73',depth:'10m',esd:18.4,note:'Pennate diatom chain — nutrient upwelling indicator'},
-  {id:'BFZ-Cast57/segimg_089',cls:'Synechococcus',len:6,conf:88,cast:'BFZ-Cast57',depth:'5m',esd:1.4,note:'Surface bloom signal'},
-  {id:'BFZ-Cast46/segimg_321',cls:'Nanophytoplanton',len:5,conf:78,cast:'BFZ-Cast46',depth:'10m',esd:8.2,note:'Colonial flagellate chain'},
-  {id:'BFZ-Cast34/segimg_156',cls:'Picocyanobacteria',len:4,conf:73,cast:'BFZ-Cast34',depth:'5m',esd:1.6,note:'Minimal chain — monitoring required'},
+// ─── Real particle images from GitHub ──────────────────────────────────────
+var chainImages={};
+fetch('https://raw.githubusercontent.com/adityaram-2003/phytoplankton-classification/main/chain_images.json')
+  .then(function(r){return r.json();})
+  .then(function(d){chainImages=d;console.log('Real chain images: '+Object.keys(d).length);})
+  .catch(function(){});
+
+function openImgModal(idx){
+  var d=window._cdata[idx];
+  if(!d)return;
+  document.getElementById('imgModalImg').src=d.src;
+  document.getElementById('imgModalInfo').textContent=d.info;
+  document.getElementById('imgModal').classList.add('open');
+}
+window._cdata=[];
+
+var DEMO_CHAINS=[
+  {id:'BFZ-Cast143/segimg_042',cls:'Crocosphaera',    len:11,conf:84,cast:'BFZ-Cast143',depth:'10m',esd:3.2, note:'Possible Trichodesmium colony — flag for N2 fixation analysis'},
+  {id:'BFZ-Cast111/segimg_234',cls:'Cyanobacteria',   len:9, conf:81,cast:'BFZ-Cast111',depth:'5m', esd:2.8, note:'Long colonial chain — diazotroph candidate, check Ch1 fluorescence'},
+  {id:'BFZ-Cast94/segimg_118', cls:'Prochlorococcus', len:8, conf:86,cast:'BFZ-Cast94', depth:'10m',esd:1.1, note:'Unusual chain length — verify with side scatter'},
+  {id:'BFZ-Cast73/segimg_507', cls:'Nitzschia',       len:7, conf:91,cast:'BFZ-Cast73', depth:'10m',esd:18.4,note:'Pennate diatom chain — upwelling nutrient indicator'},
+  {id:'BFZ-Cast57/segimg_089', cls:'Synechococcus',   len:6, conf:88,cast:'BFZ-Cast57', depth:'5m', esd:1.4, note:'Surface bloom signal — high phycoerythrin expected'},
+  {id:'BFZ-Cast46/segimg_321', cls:'Nanophytoplanton',len:5, conf:78,cast:'BFZ-Cast46', depth:'10m',esd:8.2, note:'Colonial flagellate chain'},
+  {id:'BFZ-Cast34/segimg_156', cls:'Picocyanobacteria',len:4,conf:73,cast:'BFZ-Cast34', depth:'5m', esd:1.6, note:'Minimal chain — nutrient stress indicator'},
 ];
 
 function runChain(){
-  const cls=document.getElementById('chainCls').value;
-  const ml=+document.getElementById('chainMin').value||4;
-  const mc=+document.getElementById('chainConf').value||70;
-  const results=DEMO_CHAINS.filter(c=>(!cls||c.cls===cls)&&c.len>=ml&&c.conf>=mc);
-  const el=document.getElementById('chainResult');
-  if(!results.length){
-    el.innerHTML=`<div class="chain-empty"><div style="font-size:18px;opacity:.2">🔍</div><div style="font-size:12px;color:rgba(200,232,245,.28)">No chains match — try lower thresholds</div></div>`;return;
+  var cls=document.getElementById('chainCls').value;
+  var ml=+document.getElementById('chainMin').value||4;
+  var mc=+document.getElementById('chainConf').value||70;
+  var res=DEMO_CHAINS.filter(function(c){return(!cls||c.cls===cls)&&c.len>=ml&&c.conf>=mc;});
+  var wrap=document.getElementById('chainResult');
+  if(!res.length){
+    wrap.innerHTML='<div class="chain-empty"><div style="font-size:18px;opacity:.2">&#x1F50D;</div><div style="font-size:12px;color:rgba(200,232,245,.28)">No chains match</div></div>';
+    return;
   }
-  const mx=Math.max(...results.map(c=>c.len));
-  el.innerHTML=`<div style="width:100%">
-    <div style="display:flex;gap:8px;margin-bottom:12px;font-size:8.5px;color:rgba(200,232,245,.18);letter-spacing:1.5px;font-family:var(--mono)">
-      <span style="width:24px"></span><span style="width:56px">CELL IMG</span><span style="flex:1">PARTICLE ID · CLASS · NOTES</span><span style="width:55px">CHAIN</span><span style="width:42px">CONF</span><span style="width:65px">CAST</span>
-    </div>
-    ${results.map((c,i)=>{
-      const imgSrc = cellSVG(c.cls, c.len, c.esd);
-      return `<div class="chain-entry">
-      <div class="chain-rank">${i+1}</div>
-      <div class="chain-img-slot" style="background:rgba(0,0,0,.5)">
-        <img src="${imgSrc}" alt="${c.cls} chain len=${c.len}" style="width:52px;height:52px;border-radius:7px;" title="${c.cls} · ESD ${c.esd}µm · Chain of ${c.len} cells">
-      </div>
-      <div style="flex:1">
-        <div class="chain-id">${c.id}</div>
-        <div class="chain-cls">${c.cls} · ESD: <b style="color:var(--c6)">${c.esd}µm</b></div>
-        <div class="chain-meta" style="color:${c.note.includes('Trichodesmium')||c.note.includes('diazotroph')?'var(--c6)':'rgba(200,232,245,.28)'}">⚑ ${c.note}</div>
-        <div class="chain-bar-t" style="margin-top:6px"><div class="chain-bar-f" style="width:${(c.len/mx*100).toFixed(0)}%"></div></div>
-      </div>
-      <div style="text-align:center;flex-shrink:0;width:55px">
-        <div class="chain-len">${c.len}</div>
-        <div style="font-size:8px;color:rgba(200,232,245,.28);font-family:var(--mono)">cells</div>
-      </div>
-      <div class="chain-conf" style="flex-shrink:0;width:42px;text-align:center">${c.conf}%</div>
-      <div style="flex-shrink:0;text-align:right;width:65px">
-        <div style="font-family:var(--mono);font-size:9px;color:rgba(200,232,245,.28)">${c.cast.replace('BFZ-','')}</div>
-        <div class="chain-depth">${c.depth}</div>
-      </div>
-    </div>`;}).join('')}
-    <div style="margin-top:10px;font-size:9.5px;color:rgba(200,232,245,.18);font-style:italic">
-      ⚡ Synthetic FlowCAM-style images · Real particle images load automatically when chain_images.json is pushed from Colab · ${results.length} chain${results.length>1?'s':''}
-    </div>
-  </div>`;
+  window._cdata=[];
+  var mx=Math.max.apply(null,res.map(function(c){return c.len;}));
+  var isLive=Object.keys(chainImages).length>0;
+  var html='<div style="display:flex;justify-content:space-between;margin-bottom:12px;font-size:9px;font-family:var(--mono)">'
+    +'<span style="color:rgba(200,232,245,.2);letter-spacing:1.5px">'+res.length+' CHAIN'+(res.length>1?'S':'')+'</span>'
+    +'<span style="color:'+(isLive?'var(--c2)':'rgba(200,232,245,.25)')+'">'+( isLive?'&#x25CF; REAL IMAGES':'&#x25CB; Synthetic previews')+'</span></div>';
+
+  res.forEach(function(c,i){
+    var real=chainImages[c.id]?('data:image/jpeg;base64,'+chainImages[c.id]):null;
+    var src=real||cellSVG(c.cls,c.len,c.esd);
+    window._cdata[i]={src:src,info:c.id+' | '+c.cls+' | ESD '+c.esd+'um | Chain '+c.len+' cells | '+c.conf+'%'};
+    var nc=(c.note.indexOf('Tricho')>=0||c.note.indexOf('diazo')>=0||c.note.indexOf('N2')>=0)?'var(--c6)':'rgba(200,232,245,.32)';
+    html+='<div class="chain-entry">'
+      +'<div class="chain-rank">'+(i+1)+'</div>'
+      +'<div class="chain-img-slot" onclick="openImgModal('+i+')">'
+        +'<img src="'+src+'" alt="'+c.cls+'">'
+        +'<div class="ci-esd">'+c.esd+'um</div>'
+        +(real?'<div class="ci-live"></div>':'')
+        +'<div class="ci-zoom" style="position:absolute;top:3px;left:3px;font-size:9px;opacity:0;transition:opacity .2s">+</div>'
+      +'</div>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+          +'<div class="chain-id">'+c.id+'</div>'
+          +(real?'<span style="font-size:8px;background:rgba(0,255,170,.1);color:var(--c2);border:1px solid rgba(0,255,170,.25);padding:1px 7px;border-radius:99px;font-family:var(--mono)">REAL</span>':'')
+        +'</div>'
+        +'<div class="chain-cls" style="margin-top:3px">'
+          +'<span style="color:rgba(200,232,245,.65)">'+c.cls+'</span>'
+          +' &middot; <b style="color:var(--c6)">ESD '+c.esd+'um</b>'
+          +' &middot; '+c.cast+' &middot; <span style="color:var(--c1)">'+c.depth+'</span>'
+        +'</div>'
+        +'<div style="font-size:10px;color:'+nc+';margin-top:4px;font-style:italic">&#x2691; '+c.note+'</div>'
+        +'<div class="chain-bar-t" style="width:120px;margin-top:7px"><div class="chain-bar-f" style="width:'+Math.round(c.len/mx*100)+'%"></div></div>'
+      +'</div>'
+      +'<div style="text-align:center;flex-shrink:0;width:52px">'
+        +'<div class="chain-len">'+c.len+'</div>'
+        +'<div style="font-size:8px;color:rgba(200,232,245,.25);font-family:var(--mono)">cells</div>'
+        +'<div class="chain-conf" style="margin-top:4px">'+c.conf+'%</div>'
+      +'</div>'
+    +'</div>';
+  });
+
+  html+=isLive
+    ?'<div style="margin-top:14px;padding:10px 14px;background:rgba(0,255,170,.04);border:1px solid rgba(0,255,170,.15);border-radius:8px;font-size:10px;color:rgba(200,232,245,.45)">&#x2705; Real particle images loaded &middot; Click any image to enlarge</div>'
+    :'<div style="margin-top:14px;padding:10px 14px;background:rgba(255,179,71,.04);border:1px solid rgba(255,179,71,.12);border-radius:8px;font-size:10px;color:rgba(200,232,245,.35)">&#x1F4CB; Synthetic previews shown &middot; Run <b style="color:var(--c1)">chain image export cell</b> in Colab to load real FlowCAM images &middot; Click any to enlarge</div>';
+
+  wrap.innerHTML=html;
 }
 </script>
 </body>
