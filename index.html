@@ -1660,23 +1660,35 @@ mkChart('depthChart',{type:'doughnut',
   data:{labels:['5m (surface)','10m (subsurface)'],datasets:[{data:[d5,d10],backgroundColor:['rgba(0,212,255,.5)','rgba(0,255,170,.5)'],borderColor:['#00d4ff','#00ffaa'],borderWidth:2,hoverOffset:5}]},
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:9.5},boxWidth:8,color:'rgba(200,232,245,.45)'}},tooltip:{...td,callbacks:{label:c=>`${c.label}: ${c.raw} casts`}}},cutout:'60%'}});
 
-/* ═══════ RGB CHART — real BFZ-Cast111 probe row 1 values ═══════ */
-// R=129.65, G=104.04, B=99.3, ScatterArea=8361, Symmetry=74, Circularity=100
-// Normalized to 0-100 scale for radar visibility
-mkChart('rgbChart',{type:'bar',
-  data:{
-    labels:['Avg Red','Avg Green','Avg Blue','Intensity','Scatter\nPeak/100','Circularity'],
-    datasets:[{
-      label:'BFZ-Cast111 row 1',
-      data:[+(129.65/255*100).toFixed(1), +(104.04/255*100).toFixed(1), +(99.3/255*100).toFixed(1), +(111.04/255*100).toFixed(1), +(4095/4095*100).toFixed(1), 100],
-      backgroundColor:['rgba(255,80,80,.6)','rgba(80,255,80,.6)','rgba(80,140,255,.6)','rgba(200,200,200,.5)','rgba(255,200,50,.6)','rgba(167,139,250,.6)'],
-      borderColor:['#ff5050','#50ff50','#508cff','#c8c8c8','#ffc832','#a78bfa'],
-      borderWidth:1.5,borderRadius:4
-    }]},
-  options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},tooltip:{...td,callbacks:{label:c=>`${c.label}: ${c.raw}%`}}},
-    scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.4)',font:{size:8.5},maxRotation:0}},
-      y:{grid:{color:gc},min:0,max:105,ticks:{color:'rgba(200,232,245,.28)',font:{size:8.5},callback:v=>v+'%'}}}}}});
+/* RGB CHART */
+(function(){
+  var el = document.getElementById('rgbChart');
+  if(!el) return;
+  new Chart(el, {
+    type: 'bar',
+    data: {
+      labels: ['Avg Red','Avg Green','Avg Blue','Intensity','Scatter Pk','Circularity'],
+      datasets: [{
+        label: 'BFZ-Cast111 sample',
+        data: [50.8, 40.8, 38.9, 43.5, 100.0, 100.0],
+        backgroundColor: ['rgba(255,80,80,.6)','rgba(80,220,80,.6)','rgba(80,140,255,.6)',
+          'rgba(200,200,200,.5)','rgba(255,200,50,.6)','rgba(167,139,250,.6)'],
+        borderColor: ['#ff5050','#50dc50','#508cff','#c8c8c8','#ffc832','#a78bfa'],
+        borderWidth: 1.5,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: gc }, ticks: { color: 'rgba(200,232,245,.4)', font: { size: 8.5 } } },
+        y: { grid: { color: gc }, min: 0, max: 105, ticks: { color: 'rgba(200,232,245,.28)', font: { size: 8.5 } } }
+      }
+    }
+  });
+})();
 
 /* ═══════ CONFIDENCE DONUT ═══════ */
 mkChart('confChart',{type:'doughnut',
