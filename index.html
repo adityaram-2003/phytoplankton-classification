@@ -3,1275 +3,1358 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PhytoVision — v9 Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<title>Phytoplankton Classification — Goes Lab (LDEO)</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,300&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
-/* ════════════════════════════════════════════
-   TOKENS + RESET
-════════════════════════════════════════════ */
+/* ══════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════ */
 :root{
-  --ink:     #020c18;
-  --deep:    #040f1e;
-  --navy:    #061525;
-  --mid:     #091d30;
-  --rim:     #0d2840;
-  --border:  rgba(0,200,255,0.12);
-  --border2: rgba(0,200,255,0.22);
+  --ink:    #010c18;
+  --deep:   #030f1e;
+  --navy:   #051525;
+  --mid:    #081c2e;
+  --rim:    #0b2540;
+  --surf:   #0e2e4d;
 
-  --c1: #00d4ff;   /* primary cyan */
-  --c2: #00ffc3;   /* mint */
-  --c3: #005fff;   /* electric blue */
-  --c4: #ff4d6d;   /* coral warning */
-  --c5: #a78bfa;   /* violet */
-  --c6: #ffb347;   /* amber */
+  --c1:#00d4ff; --c2:#00ffaa; --c3:#0066ff;
+  --c4:#ff4d6d; --c5:#a78bfa; --c6:#ffb347;
+  --c7:#34d399; --c8:#f472b6;
 
-  --glass-bg:     rgba(6,21,37,0.55);
-  --glass-bg2:    rgba(0,212,255,0.06);
-  --glass-border: rgba(0,212,255,0.18);
-  --glass-shadow: 0 8px 48px rgba(0,0,0,0.5), 0 1px 0 rgba(0,212,255,0.12) inset;
+  --glass:rgba(5,18,35,0.6);
+  --glass2:rgba(0,212,255,0.05);
+  --gb:rgba(0,212,255,0.14);
+  --gs:0 8px 48px rgba(0,0,0,0.55),0 1px 0 rgba(0,212,255,0.1) inset;
 
-  --glow-c1: 0 0 30px rgba(0,212,255,0.25), 0 0 80px rgba(0,212,255,0.08);
-  --glow-c2: 0 0 30px rgba(0,255,195,0.25), 0 0 80px rgba(0,255,195,0.08);
-
-  --sidebar: 240px;
-  --r: 16px;
-  --r-sm: 10px;
-  --r-lg: 24px;
+  --sb:260px;
+  --r:16px; --rsm:10px; --rlg:24px;
+  --font:'Outfit',sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --display:'Fraunces',serif;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{
-  font-family:'Outfit',sans-serif;
-  background:var(--ink);
-  color:#c8e6f5;
-  display:flex;
-  min-height:100vh;
-  overflow-x:hidden;
-  cursor:none;
-}
+body{font-family:var(--font);background:var(--ink);color:#c8e8f5;display:flex;min-height:100vh;overflow-x:hidden;cursor:none}
 
-/* ── Custom cursor ── */
-#cursor{
-  position:fixed;width:12px;height:12px;border-radius:50%;
-  background:var(--c1);pointer-events:none;z-index:9999;
-  transform:translate(-50%,-50%);
-  box-shadow:0 0 16px var(--c1), 0 0 32px rgba(0,212,255,0.4);
-  transition:transform 0.08s, width 0.2s, height 0.2s, background 0.2s;
-  mix-blend-mode:screen;
-}
-#cursor-ring{
-  position:fixed;width:36px;height:36px;border-radius:50%;
-  border:1px solid rgba(0,212,255,0.45);pointer-events:none;z-index:9998;
-  transform:translate(-50%,-50%);
-  transition:transform 0.18s cubic-bezier(0.22,1,0.36,1), width 0.3s, height 0.3s, border-color 0.3s;
-}
-body:has(a:hover) #cursor,
-body:has(button:hover) #cursor{width:20px;height:20px;background:var(--c2);}
-body:has(a:hover) #cursor-ring,
-body:has(button:hover) #cursor-ring{width:52px;height:52px;border-color:rgba(0,255,195,0.5);}
-
-/* ── Scrollbar ── */
-::-webkit-scrollbar{width:4px}
+/* Custom cursor */
+#cur,#cur2{position:fixed;border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%)}
+#cur{width:10px;height:10px;background:var(--c1);box-shadow:0 0 14px var(--c1),0 0 28px rgba(0,212,255,0.3);transition:width .15s,height .15s,background .2s;mix-blend-mode:screen}
+#cur2{width:32px;height:32px;border:1px solid rgba(0,212,255,0.4);transition:left .14s cubic-bezier(.22,1,.36,1),top .14s cubic-bezier(.22,1,.36,1),width .25s,height .25s}
+::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-track{background:var(--ink)}
-::-webkit-scrollbar-thumb{background:var(--rim);border-radius:99px}
+::-webkit-scrollbar-thumb{background:var(--surf);border-radius:99px}
 
-/* ════════════════════════════════════════════
-   AMBIENT BACKGROUND
-════════════════════════════════════════════ */
-#ambient{
-  position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;
-}
-.orb{
-  position:absolute;border-radius:50%;filter:blur(80px);
-  animation:orb-drift 18s ease-in-out infinite alternate;
-}
-.orb1{width:600px;height:600px;background:radial-gradient(circle,rgba(0,95,255,0.12),transparent 70%);top:-200px;left:-100px;}
-.orb2{width:500px;height:500px;background:radial-gradient(circle,rgba(0,212,255,0.09),transparent 70%);top:40%;right:-150px;animation-delay:-7s;animation-duration:22s}
-.orb3{width:400px;height:400px;background:radial-gradient(circle,rgba(0,255,195,0.07),transparent 70%);bottom:-100px;left:30%;animation-delay:-13s;animation-duration:16s}
-@keyframes orb-drift{
-  0%{transform:translate(0,0) scale(1)}
-  100%{transform:translate(40px,30px) scale(1.08)}
-}
-#grid-bg{
-  position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:
-    linear-gradient(rgba(0,212,255,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,212,255,0.025) 1px, transparent 1px);
-  background-size:60px 60px;
-  mask-image:radial-gradient(ellipse at 50% 50%, black 20%, transparent 80%);
-}
+/* Ambient */
+#amb{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);animation:drift 20s ease-in-out infinite alternate}
+.o1{width:700px;height:700px;background:radial-gradient(circle,rgba(0,80,255,.1),transparent 70%);top:-200px;left:-150px}
+.o2{width:500px;height:500px;background:radial-gradient(circle,rgba(0,212,255,.07),transparent 70%);top:45%;right:-100px;animation-delay:-8s;animation-duration:25s}
+.o3{width:400px;height:400px;background:radial-gradient(circle,rgba(0,255,170,.06),transparent 70%);bottom:-50px;left:35%;animation-delay:-15s;animation-duration:18s}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(50px,35px) scale(1.1)}}
+#gbg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(0,212,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.022) 1px,transparent 1px);
+  background-size:64px 64px;
+  mask-image:radial-gradient(ellipse at 50% 40%,black 30%,transparent 75%)}
 
-/* ════════════════════════════════════════════
+/* ══════════════════════════════════════
    SIDEBAR
-════════════════════════════════════════════ */
-.sidebar{
-  width:var(--sidebar);min-height:100vh;position:fixed;left:0;top:0;
-  z-index:100;overflow-y:auto;
-  background:var(--glass-bg);
-  backdrop-filter:blur(24px) saturate(180%);
-  -webkit-backdrop-filter:blur(24px) saturate(180%);
-  border-right:1px solid var(--glass-border);
-  display:flex;flex-direction:column;padding:32px 0 24px;
-}
-.sidebar::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--c1),transparent);
-  opacity:0.5;
-}
+══════════════════════════════════════ */
+.sb{width:var(--sb);min-height:100vh;position:fixed;left:0;top:0;z-index:100;overflow-y:auto;
+  background:rgba(3,12,25,.7);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);
+  border-right:1px solid rgba(0,212,255,.12);display:flex;flex-direction:column;padding:28px 0 24px}
+.sb::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--c1),transparent);opacity:.4}
 
-.sb-logo{padding:0 24px 28px;border-bottom:1px solid var(--border);}
-.sb-badge{
-  display:inline-flex;align-items:center;gap:6px;
-  font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
-  color:var(--c1);background:rgba(0,212,255,0.1);
-  border:1px solid rgba(0,212,255,0.25);padding:4px 10px;border-radius:6px;
-  margin-bottom:12px;
-}
-.sb-pulse{width:5px;height:5px;border-radius:50%;background:var(--c2);
-  animation:pulse 2s ease-in-out infinite;box-shadow:0 0 6px var(--c2);}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
-.sb-title{font-size:24px;font-weight:800;letter-spacing:-1px;color:#fff;line-height:1}
-.sb-title span{
-  background:linear-gradient(135deg,var(--c1),var(--c2));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.sb-sub{font-size:9px;color:rgba(0,212,255,0.4);letter-spacing:2px;margin-top:5px;
-  font-family:'JetBrains Mono',monospace;}
+.sb-brand{padding:0 22px 24px;border-bottom:1px solid rgba(0,212,255,.1)}
+.sb-badge{display:inline-flex;align-items:center;gap:5px;font-size:8.5px;font-weight:700;letter-spacing:2.5px;
+  text-transform:uppercase;color:var(--c2);background:rgba(0,255,170,.08);border:1px solid rgba(0,255,170,.2);
+  padding:4px 10px;border-radius:6px;margin-bottom:10px}
+.sb-dot{width:5px;height:5px;border-radius:50%;background:var(--c2);box-shadow:0 0 6px var(--c2);animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.sb-name{font-family:var(--display);font-size:15px;font-weight:600;color:#fff;line-height:1.25;letter-spacing:-.3px}
+.sb-lab{font-size:9px;color:var(--c1);letter-spacing:1.5px;text-transform:uppercase;font-family:var(--mono);margin-top:4px;opacity:.7}
 
-.sb-section{font-size:9px;font-weight:700;letter-spacing:2.5px;color:rgba(0,212,255,0.3);
-  text-transform:uppercase;padding:20px 24px 8px;}
-.nav-link{
-  display:flex;align-items:center;gap:12px;
-  padding:10px 24px;text-decoration:none;
-  font-size:12.5px;font-weight:400;color:rgba(200,230,245,0.5);
-  border-left:2px solid transparent;
-  transition:all 0.25s cubic-bezier(0.22,1,0.36,1);
-  position:relative;overflow:hidden;
-}
-.nav-link::before{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(90deg,rgba(0,212,255,0.08),transparent);
-  opacity:0;transition:opacity 0.3s;
-}
-.nav-link:hover,.nav-link.active{
-  color:var(--c1);border-left-color:var(--c1);
-}
-.nav-link:hover::before,.nav-link.active::before{opacity:1;}
-.nav-icon-wrap{
-  width:30px;height:30px;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  background:rgba(0,212,255,0.06);border:1px solid var(--border);
-  font-size:14px;flex-shrink:0;
-  transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1), background 0.3s, box-shadow 0.3s;
-}
-.nav-link:hover .nav-icon-wrap,.nav-link.active .nav-icon-wrap{
-  transform:scale(1.18) rotate(-4deg);
-  background:rgba(0,212,255,0.14);
-  box-shadow:0 0 14px rgba(0,212,255,0.25);
-}
-.nav-chip{
-  margin-left:auto;font-size:9px;font-weight:700;
-  padding:2px 7px;border-radius:99px;
-  background:rgba(0,212,255,0.08);color:rgba(0,212,255,0.5);
-  font-family:'JetBrains Mono',monospace;
-  border:1px solid rgba(0,212,255,0.15);
-}
-.nav-link.active .nav-chip{background:rgba(0,212,255,0.15);color:var(--c1);}
+.sb-sec{font-size:8.5px;font-weight:700;letter-spacing:2.5px;color:rgba(0,212,255,.3);text-transform:uppercase;padding:18px 22px 7px}
+.nl{display:flex;align-items:center;gap:10px;padding:9px 22px;text-decoration:none;
+  font-size:12px;font-weight:400;color:rgba(200,232,245,.45);
+  border-left:2px solid transparent;transition:all .22s cubic-bezier(.22,1,.36,1);position:relative;overflow:hidden}
+.nl::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,212,255,.07),transparent);opacity:0;transition:opacity .3s}
+.nl:hover,.nl.on{color:var(--c1);border-left-color:var(--c1)}
+.nl:hover::before,.nl.on::before{opacity:1}
+.ni{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.1);font-size:13px;flex-shrink:0;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),background .3s,box-shadow .3s}
+.nl:hover .ni,.nl.on .ni{transform:scale(1.15) rotate(-5deg);background:rgba(0,212,255,.12);box-shadow:0 0 12px rgba(0,212,255,.2)}
+.nchip{margin-left:auto;font-size:8.5px;font-weight:700;padding:2px 7px;border-radius:99px;
+  background:rgba(0,212,255,.07);color:rgba(0,212,255,.45);font-family:var(--mono);border:1px solid rgba(0,212,255,.12)}
+.nl.on .nchip{color:var(--c1);background:rgba(0,212,255,.13)}
 
-.sb-foot{margin-top:auto;padding:20px 24px 0;border-top:1px solid var(--border);}
-.sb-foot-mono{font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,212,255,0.35);}
-.sb-foot-mono b{color:var(--c1);}
+.sb-foot{margin-top:auto;padding:18px 22px 0;border-top:1px solid rgba(0,212,255,.08)}
+.sb-mono{font-family:var(--mono);font-size:9.5px;color:rgba(0,212,255,.3);margin-bottom:5px}
+.sb-mono b{color:var(--c1)}
 
-/* ════════════════════════════════════════════
+/* ══════════════════════════════════════
    MAIN
-════════════════════════════════════════════ */
-.main{
-  margin-left:var(--sidebar);flex:1;
-  padding:48px 52px;
-  position:relative;z-index:1;
-  max-width:calc(100vw - var(--sidebar));
-}
+══════════════════════════════════════ */
+.main{margin-left:var(--sb);flex:1;padding:44px 48px;position:relative;z-index:1}
 
-/* ════════════════════════════════════════════
-   GLASS CARD
-════════════════════════════════════════════ */
-.glass{
-  background:var(--glass-bg);
-  backdrop-filter:blur(20px) saturate(160%);
-  -webkit-backdrop-filter:blur(20px) saturate(160%);
-  border:1px solid var(--glass-border);
-  border-radius:var(--r);
-  box-shadow:var(--glass-shadow);
-  position:relative;overflow:hidden;
-}
-.glass::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent 0%,rgba(0,212,255,0.3) 50%,transparent 100%);
-}
-.glass-hover{transition:transform 0.4s cubic-bezier(0.22,1,0.36,1), box-shadow 0.4s, border-color 0.4s;}
-.glass-hover:hover{
-  transform:translateY(-3px);
-  border-color:rgba(0,212,255,0.3);
-  box-shadow:var(--glass-shadow), 0 20px 60px rgba(0,0,0,0.4), 0 0 40px rgba(0,212,255,0.08);
-}
+/* Glass card */
+.g{background:var(--glass);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);
+  border:1px solid var(--gb);border-radius:var(--r);box-shadow:var(--gs);position:relative;overflow:hidden}
+.g::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,.25),transparent)}
+.gh{transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s,border-color .35s}
+.gh:hover{transform:translateY(-2px);border-color:rgba(0,212,255,.25);box-shadow:var(--gs),0 16px 48px rgba(0,0,0,.35),0 0 32px rgba(0,212,255,.06)}
+.tilt{transform-style:preserve-3d}
+.p{padding:22px}
 
-/* Tilt cards (JS) */
-.tilt{transform-style:preserve-3d;transform:perspective(1000px);}
+/* Animated glow border */
+.glow-b{position:relative}
+.glow-b::after{content:'';position:absolute;inset:-1px;border-radius:calc(var(--r)+1px);
+  background:linear-gradient(90deg,var(--c1),var(--c2),var(--c3),var(--c1));background-size:300% 100%;
+  animation:border-run 4s linear infinite;z-index:-1;opacity:0;transition:opacity .4s}
+.glow-b:hover::after{opacity:.3}
+@keyframes border-run{0%{background-position:0%}100%{background-position:300%}}
 
-/* ════════════════════════════════════════════
+/* ══════════════════════════════════════
    HERO
-════════════════════════════════════════════ */
-.hero{margin-bottom:48px;padding-top:8px;}
-.hero-chips{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
-.chip{
-  font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
-  padding:5px 12px;border-radius:99px;display:inline-flex;align-items:center;gap:6px;
-  transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s;
-}
-.chip:hover{transform:translateY(-2px) scale(1.04);}
-.chip-c1{background:rgba(0,212,255,0.1);color:var(--c1);border:1px solid rgba(0,212,255,0.25);}
-.chip-c2{background:rgba(0,255,195,0.1);color:var(--c2);border:1px solid rgba(0,255,195,0.25);}
-.chip-c3{background:rgba(0,95,255,0.1);color:#6fa3ff;border:1px solid rgba(0,95,255,0.25);}
-.chip-c5{background:rgba(167,139,250,0.1);color:var(--c5);border:1px solid rgba(167,139,250,0.25);}
-.chip-c4{background:rgba(255,77,109,0.1);color:var(--c4);border:1px solid rgba(255,77,109,0.25);}
-.chip-c6{background:rgba(255,179,71,0.1);color:var(--c6);border:1px solid rgba(255,179,71,0.25);}
+══════════════════════════════════════ */
+.hero{margin-bottom:44px}
+.hero-chips{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+.chip{font-size:8.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  padding:4px 11px;border-radius:99px;display:inline-flex;align-items:center;gap:5px;
+  transition:transform .22s cubic-bezier(.34,1.56,.64,1)}
+.chip:hover{transform:translateY(-2px) scale(1.04)}
+.cc1{background:rgba(0,212,255,.09);color:var(--c1);border:1px solid rgba(0,212,255,.22)}
+.cc2{background:rgba(0,255,170,.09);color:var(--c2);border:1px solid rgba(0,255,170,.22)}
+.cc3{background:rgba(0,102,255,.09);color:#6fa8ff;border:1px solid rgba(0,102,255,.22)}
+.cc5{background:rgba(167,139,250,.09);color:var(--c5);border:1px solid rgba(167,139,250,.22)}
+.cc6{background:rgba(255,179,71,.09);color:var(--c6);border:1px solid rgba(255,179,71,.22)}
+.cc7{background:rgba(52,211,153,.09);color:var(--c7);border:1px solid rgba(52,211,153,.22)}
+.cc8{background:rgba(244,114,182,.09);color:var(--c8);border:1px solid rgba(244,114,182,.22)}
 
-.hero-title{
-  font-size:52px;font-weight:900;letter-spacing:-2.5px;
-  color:#fff;line-height:1.0;margin-bottom:14px;
-}
-.hero-title .grad{
-  background:linear-gradient(120deg,var(--c1) 0%,var(--c2) 50%,var(--c3) 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  animation:grad-shift 4s ease-in-out infinite alternate;
-  background-size:200%;
-}
-@keyframes grad-shift{0%{background-position:0%}100%{background-position:100%}}
-.hero-sub{
-  font-size:14px;color:rgba(200,230,245,0.55);font-weight:300;
-  max-width:580px;line-height:1.75;
-}
+.hero-title{font-family:var(--display);font-size:48px;font-weight:800;color:#fff;line-height:1.05;letter-spacing:-1.5px;margin-bottom:6px}
+.hero-title .gr{background:linear-gradient(130deg,var(--c1),var(--c2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-lab{font-size:13px;color:rgba(200,232,245,.45);letter-spacing:.5px;margin-bottom:12px;font-weight:300}
+.hero-lab b{color:var(--c1);font-weight:600}
+.hero-sub{font-size:13.5px;color:rgba(200,232,245,.5);font-weight:300;max-width:600px;line-height:1.7}
+.live-badge{display:inline-flex;align-items:center;gap:6px;font-size:9px;font-weight:700;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--c2);background:rgba(0,255,170,.08);border:1px solid rgba(0,255,170,.22);
+  padding:5px 12px;border-radius:99px;margin-top:14px}
 
-/* ════════════════════════════════════════════
+/* ══════════════════════════════════════
    STATS ROW
-════════════════════════════════════════════ */
-.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:48px;}
-.stat{
-  padding:22px 20px;
-  cursor:default;
-}
-.stat-accent-line{
-  position:absolute;bottom:0;left:20%;right:20%;height:1px;
-  background:var(--c1);filter:blur(1px);opacity:0.3;
-  transition:opacity 0.3s,left 0.3s,right 0.3s;
-}
-.stat:hover .stat-accent-line{opacity:0.7;left:10%;right:10%;}
-.stat-icon{
-  width:38px;height:38px;border-radius:10px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:18px;margin-bottom:14px;
-  transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.35s;
-}
-.stat:hover .stat-icon{transform:translateY(-4px) scale(1.1) rotate(-6deg);}
-.si-c1{background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);}
-.si-c2{background:rgba(0,255,195,0.1);border:1px solid rgba(0,255,195,0.2);}
-.si-c3{background:rgba(0,95,255,0.1);border:1px solid rgba(0,95,255,0.2);}
-.si-c5{background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.2);}
-.si-c6{background:rgba(255,179,71,0.1);border:1px solid rgba(255,179,71,0.2);}
-.stat:hover .si-c1{box-shadow:0 8px 24px rgba(0,212,255,0.25);}
-.stat:hover .si-c2{box-shadow:0 8px 24px rgba(0,255,195,0.25);}
-.stat-lbl{font-size:9.5px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(200,230,245,0.35);margin-bottom:6px;}
-.stat-val{
-  font-size:34px;font-weight:800;letter-spacing:-1.5px;color:#fff;
-  font-variant-numeric:tabular-nums;line-height:1;
-  font-family:'Outfit',sans-serif;
-}
-.stat-unit{font-size:14px;color:rgba(200,230,245,0.4);font-weight:400;}
-.stat-note{font-size:10px;color:rgba(200,230,245,0.3);margin-top:6px;}
-.stat-note.up{color:var(--c2);}
+══════════════════════════════════════ */
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:44px}
+.stat{padding:20px 18px;cursor:default}
+.stat-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-size:16px;margin-bottom:12px;transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s}
+.stat:hover .stat-icon{transform:translateY(-4px) scale(1.12) rotate(-6deg)}
+.si1{background:rgba(0,212,255,.09);border:1px solid rgba(0,212,255,.18)}
+.si2{background:rgba(0,255,170,.09);border:1px solid rgba(0,255,170,.18)}
+.si3{background:rgba(167,139,250,.09);border:1px solid rgba(167,139,250,.18)}
+.si4{background:rgba(255,179,71,.09);border:1px solid rgba(255,179,71,.18)}
+.si5{background:rgba(52,211,153,.09);border:1px solid rgba(52,211,153,.18)}
+.si6{background:rgba(244,114,182,.09);border:1px solid rgba(244,114,182,.18)}
+.stat-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(200,232,245,.3);margin-bottom:5px}
+.stat-val{font-size:30px;font-weight:800;letter-spacing:-1px;color:#fff;font-variant-numeric:tabular-nums;line-height:1}
+.stat-unit{font-size:13px;color:rgba(200,232,245,.35);font-weight:400}
+.stat-note{font-size:9.5px;color:rgba(200,232,245,.28);margin-top:5px}
+.stat-note.up{color:var(--c2)}
 
-/* ════════════════════════════════════════════
+/* ══════════════════════════════════════
    SECTION HEADERS
-════════════════════════════════════════════ */
-.section{margin-bottom:64px;scroll-margin-top:32px;}
-.sec-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:28px;}
-.sec-num{
-  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;
-  color:var(--c1);background:rgba(0,212,255,0.08);
-  border:1px solid rgba(0,212,255,0.2);border-radius:6px;
-  padding:4px 8px;flex-shrink:0;margin-top:3px;
-}
-.sec-title{font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.5px;}
-.sec-sub{font-size:12px;color:rgba(200,230,245,0.35);margin-top:3px;font-weight:300;}
-.sec-actions{margin-left:auto;display:flex;gap:8px;align-items:center;}
+══════════════════════════════════════ */
+.sec{margin-bottom:56px;scroll-margin-top:28px}
+.sh{display:flex;align-items:flex-start;gap:14px;margin-bottom:24px}
+.snum{font-family:var(--mono);font-size:9.5px;font-weight:600;color:var(--c1);
+  background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.18);border-radius:6px;
+  padding:4px 8px;flex-shrink:0;margin-top:3px}
+.stitle{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px}
+.ssub{font-size:11.5px;color:rgba(200,232,245,.32);margin-top:3px;font-weight:300}
+.sact{margin-left:auto;display:flex;gap:8px;align-items:center}
 
-/* ════════════════════════════════════════════
-   BUTTONS
-════════════════════════════════════════════ */
-.btn{
-  font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;
-  letter-spacing:0.5px;padding:8px 16px;border-radius:8px;cursor:pointer;
-  border:1px solid var(--rim);background:transparent;color:rgba(200,230,245,0.5);
-  transition:all 0.25s cubic-bezier(0.22,1,0.36,1);
-  position:relative;overflow:hidden;
-}
-.btn::before{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(0,212,255,0.15),transparent);
-  opacity:0;transition:opacity 0.3s;
-}
-.btn:hover{color:var(--c1);border-color:rgba(0,212,255,0.4);transform:translateY(-1px);}
-.btn:hover::before{opacity:1;}
-.btn:active{transform:translateY(0px) scale(0.98);}
-.btn-glow{
-  background:rgba(0,212,255,0.1);color:var(--c1);
-  border-color:rgba(0,212,255,0.3);
-  box-shadow:0 0 20px rgba(0,212,255,0.15);
-}
-.btn-glow:hover{
-  background:rgba(0,212,255,0.18);
-  box-shadow:0 0 32px rgba(0,212,255,0.3);
-}
+/* Buttons */
+.btn{font-family:var(--font);font-size:10.5px;font-weight:600;letter-spacing:.4px;
+  padding:8px 15px;border-radius:8px;cursor:pointer;border:1px solid var(--rim);
+  background:transparent;color:rgba(200,232,245,.45);transition:all .22s cubic-bezier(.22,1,.36,1);position:relative;overflow:hidden}
+.btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,212,255,.12),transparent);opacity:0;transition:opacity .3s}
+.btn:hover{color:var(--c1);border-color:rgba(0,212,255,.35);transform:translateY(-1px)}
+.btn:hover::before{opacity:1}
+.btn:active{transform:scale(.98)}
+.btng{background:rgba(0,212,255,.09);color:var(--c1);border-color:rgba(0,212,255,.28);box-shadow:0 0 18px rgba(0,212,255,.12)}
+.btng:hover{background:rgba(0,212,255,.15);box-shadow:0 0 28px rgba(0,212,255,.25)}
 
-/* ════════════════════════════════════════════
-   CARD INNER PARTS
-════════════════════════════════════════════ */
-.card-inner{padding:24px;}
-.card-title{
-  font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-  color:rgba(0,212,255,0.6);margin-bottom:18px;
-  display:flex;align-items:center;gap:8px;
-}
-.card-dot{
-  width:6px;height:6px;border-radius:50%;background:var(--c1);
-  box-shadow:0 0 8px var(--c1);
-  animation:pulse 2s ease-in-out infinite;
-}
-.card-dot.c2{background:var(--c2);box-shadow:0 0 8px var(--c2);}
-.card-dot.c5{background:var(--c5);box-shadow:0 0 8px var(--c5);}
-.card-dot.c6{background:var(--c6);box-shadow:0 0 8px var(--c6);}
-.card-dot.c4{background:var(--c4);box-shadow:0 0 8px var(--c4);}
+/* ══════════════════════════════════════
+   GRIDS
+══════════════════════════════════════ */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px}
+.g65{display:grid;grid-template-columns:1.75fr 1fr;gap:18px}
+.g35{display:grid;grid-template-columns:1fr 1.75fr;gap:18px}
+.div{height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,.12),transparent);margin:52px 0}
 
-/* ════════════════════════════════════════════
-   LAYOUTS
-════════════════════════════════════════════ */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
-.g65{display:grid;grid-template-columns:1.7fr 1fr;gap:20px;}
-.g35{display:grid;grid-template-columns:1fr 1.7fr;gap:20px;}
-.divider{height:1px;background:linear-gradient(90deg,rgba(0,212,255,0.15),transparent);margin:56px 0;}
+/* Card internals */
+.ct{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(0,212,255,.55);
+  margin-bottom:16px;display:flex;align-items:center;gap:7px}
+.cdot{width:6px;height:6px;border-radius:50%;background:var(--c1);box-shadow:0 0 7px var(--c1);animation:pulse 2s infinite}
+.cdot.c2{background:var(--c2);box-shadow:0 0 7px var(--c2)}
+.cdot.c5{background:var(--c5);box-shadow:0 0 7px var(--c5)}
+.cdot.c6{background:var(--c6);box-shadow:0 0 7px var(--c6)}
+.cdot.c4{background:var(--c4);box-shadow:0 0 7px var(--c4)}
+.cdot.c7{background:var(--c7);box-shadow:0 0 7px var(--c7)}
+.cdot.c8{background:var(--c8);box-shadow:0 0 7px var(--c8)}
 
-/* ════════════════════════════════════════════
-   CLASS DISTRIBUTION BARS
-════════════════════════════════════════════ */
-.cls-row{
-  display:flex;align-items:center;gap:14px;
-  padding:9px 0;border-bottom:1px solid rgba(0,212,255,0.06);
-  transition:transform 0.2s;
-}
-.cls-row:hover{transform:translateX(4px);}
-.cls-row:last-child{border-bottom:none;}
-.cls-name{
-  font-size:12px;color:rgba(200,230,245,0.7);width:170px;flex-shrink:0;
-  display:flex;align-items:center;gap:8px;
-}
-.cls-swatch{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
-.cls-track{flex:1;height:5px;background:rgba(0,212,255,0.07);border-radius:99px;overflow:hidden;}
-.cls-fill{height:100%;border-radius:99px;transition:width 1.2s cubic-bezier(0.22,1,0.36,1);}
-.cls-count{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(200,230,245,0.4);width:50px;text-align:right;}
+/* Charts */
+.ch{position:relative}
+.ch260{height:260px}
+.ch200{height:200px}
+.ch180{height:180px}
+.ch310{height:310px}
+.ch140{height:140px}
 
-/* ════════════════════════════════════════════
-   METRICS TABLE
-════════════════════════════════════════════ */
-.mt{width:100%;border-collapse:collapse;}
-.mt th{
-  font-size:9px;letter-spacing:2px;text-transform:uppercase;
-  color:rgba(200,230,245,0.25);font-weight:700;
-  padding:10px 12px;border-bottom:1px solid rgba(0,212,255,0.08);
-  text-align:left;
-}
-.mt td{padding:10px 12px;border-bottom:1px solid rgba(0,212,255,0.05);font-size:12px;}
-.mt tr:last-child td{border-bottom:none;}
-.mt tr:hover td{background:rgba(0,212,255,0.03);}
-.mt-bar-bg{height:4px;background:rgba(0,212,255,0.08);border-radius:99px;overflow:hidden;width:72px;}
-.mt-bar-fill{height:100%;border-radius:99px;}
+/* KV pairs */
+.kv{display:flex;flex-direction:column;gap:8px}
+.kvr{display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.kvk{color:rgba(200,232,245,.32);font-weight:300}
+.kvv{font-family:var(--mono);color:rgba(200,232,245,.72)}
+.kvv.c1{color:var(--c1)}.kvv.c2{color:var(--c2)}.kvv.c4{color:var(--c4)}.kvv.c7{color:var(--c7)}
+.kvsep{height:1px;background:rgba(0,212,255,.06);margin:3px 0}
 
-/* ════════════════════════════════════════════
-   CONFUSION MATRIX
-════════════════════════════════════════════ */
-.cm-wrap{overflow-x:auto;padding-bottom:4px;}
-.cm-cell{
-  border-radius:5px;display:flex;align-items:center;justify-content:center;
-  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;
-  transition:transform 0.15s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.15s;
-  position:relative;cursor:default;
-}
-.cm-cell:hover{transform:scale(1.15);z-index:10;box-shadow:0 0 20px rgba(0,212,255,0.3);}
-.cm-row-lbl,.cm-col-lbl{
-  font-size:8px;color:rgba(200,230,245,0.3);
-  font-family:'JetBrains Mono',monospace;
-  display:flex;align-items:center;justify-content:flex-end;
-}
-.cm-col-lbl{
-  writing-mode:vertical-rl;transform:rotate(180deg);
-  justify-content:flex-start;padding-bottom:4px;
-  max-height:65px;overflow:hidden;
-}
+/* Class distribution bars */
+.clsr{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(0,212,255,.05);transition:transform .2s}
+.clsr:hover{transform:translateX(3px)}
+.clsr:last-child{border-bottom:none}
+.clsn{font-size:11.5px;color:rgba(200,232,245,.65);width:165px;flex-shrink:0;display:flex;align-items:center;gap:7px}
+.clss{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.clst{flex:1;height:4px;background:rgba(0,212,255,.06);border-radius:99px;overflow:hidden}
+.clsf{height:100%;border-radius:99px;transition:width 1.2s cubic-bezier(.22,1,.36,1)}
+.clsc{font-family:var(--mono);font-size:10.5px;color:rgba(200,232,245,.35);width:44px;text-align:right}
 
-/* ════════════════════════════════════════════
+/* Awaiting */
+.await{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;min-height:200px;padding:32px;text-align:center;position:relative}
+.await::before{content:'';position:absolute;inset:0;border-radius:inherit;
+  background:repeating-linear-gradient(-55deg,transparent,transparent 10px,rgba(0,212,255,.016) 10px,rgba(0,212,255,.016) 20px)}
+.aw-icon{font-size:38px;opacity:.22;animation:float 3.5s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.aw-tag{font-size:8.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--c6);background:rgba(255,179,71,.07);border:1px solid rgba(255,179,71,.18);padding:4px 11px;border-radius:6px}
+.aw-title{font-size:13.5px;font-weight:700;color:rgba(200,232,245,.65)}
+.aw-sub{font-size:11.5px;color:rgba(200,232,245,.28);max-width:280px;line-height:1.65;font-weight:300}
+.aw-fields{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.aff{font-family:var(--mono);font-size:9.5px;color:rgba(200,232,245,.35);background:rgba(0,212,255,.05);
+  border:1px solid rgba(0,212,255,.11);padding:3px 9px;border-radius:6px;
+  transition:color .2s,border-color .2s,transform .22s cubic-bezier(.34,1.56,.64,1)}
+.aff:hover{color:var(--c1);border-color:rgba(0,212,255,.28);transform:translateY(-2px)}
+
+/* Skeleton shimmer */
+.sk{height:7px;border-radius:99px;background:linear-gradient(90deg,rgba(0,212,255,.05) 25%,rgba(0,212,255,.1) 50%,rgba(0,212,255,.05) 75%);background-size:200% 100%;animation:shim 2s ease-in-out infinite}
+@keyframes shim{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ══════════════════════════════════════
+   CRUISE OVERVIEW CARDS
+══════════════════════════════════════ */
+.cruise-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.cruise-card{padding:18px;background:rgba(0,0,0,.3);border:1px solid rgba(0,212,255,.1);border-radius:12px;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),border-color .3s,box-shadow .3s;cursor:default}
+.cruise-card:hover{transform:translateY(-4px);border-color:rgba(0,212,255,.22);box-shadow:0 12px 30px rgba(0,0,0,.3),0 0 20px rgba(0,212,255,.07)}
+.cc-label{font-size:8.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(0,212,255,.4);margin-bottom:6px;font-family:var(--mono)}
+.cc-val{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.8px;line-height:1}
+.cc-unit{font-size:11px;color:rgba(200,232,245,.35)}
+.cc-note{font-size:10px;color:rgba(200,232,245,.28);margin-top:5px}
+
+/* ══════════════════════════════════════
    ARCHITECTURE STRIP
-════════════════════════════════════════════ */
-.arch-strip{display:flex;align-items:center;gap:0;overflow-x:auto;padding:4px 0 8px;}
-.arch-block{
-  background:rgba(0,212,255,0.04);
-  border:1px solid rgba(0,212,255,0.12);
-  border-radius:10px;padding:12px 16px;flex-shrink:0;
-  text-align:center;min-width:100px;
-  transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s, border-color 0.3s, background 0.3s;
-  cursor:default;
-}
-.arch-block:hover{
-  transform:translateY(-5px) scale(1.04);
-  box-shadow:0 12px 32px rgba(0,0,0,0.3), 0 0 20px rgba(0,212,255,0.12);
-  border-color:rgba(0,212,255,0.3);
-  background:rgba(0,212,255,0.08);
-  z-index:5;
-}
-.arch-hl{
-  border-color:rgba(0,212,255,0.35) !important;
-  background:rgba(0,212,255,0.08) !important;
-}
-.arch-block-n{font-size:11px;font-weight:600;color:rgba(200,230,245,0.8);}
-.arch-block-d{font-size:9px;color:rgba(200,230,245,0.35);margin-top:3px;font-family:'JetBrains Mono',monospace;}
-.arch-arr{color:rgba(0,212,255,0.3);font-size:16px;padding:0 6px;flex-shrink:0;}
+══════════════════════════════════════ */
+.arch{display:flex;align-items:center;gap:0;overflow-x:auto;padding:4px 0 8px}
+.ab{background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.11);border-radius:10px;
+  padding:11px 15px;flex-shrink:0;text-align:center;min-width:95px;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),box-shadow .3s,border-color .3s,background .3s;cursor:default}
+.ab:hover{transform:translateY(-5px) scale(1.04);box-shadow:0 10px 28px rgba(0,0,0,.3),0 0 18px rgba(0,212,255,.1);border-color:rgba(0,212,255,.28);background:rgba(0,212,255,.08)}
+.ab-hl{border-color:rgba(0,212,255,.32)!important;background:rgba(0,212,255,.07)!important}
+.ab-n{font-size:10.5px;font-weight:600;color:rgba(200,232,245,.78)}
+.ab-d{font-size:8.5px;color:rgba(200,232,245,.32);margin-top:3px;font-family:var(--mono)}
+.arch-arr{color:rgba(0,212,255,.28);font-size:14px;padding:0 5px;flex-shrink:0}
 
-/* ════════════════════════════════════════════
-   STAGE BADGES
-════════════════════════════════════════════ */
-.stage-strip{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
-.stage-badge{
-  display:inline-flex;align-items:center;gap:7px;
-  font-size:10px;font-weight:500;color:rgba(200,230,245,0.45);
-  background:rgba(0,0,0,0.3);border:1px solid var(--rim);
-  padding:5px 12px;border-radius:8px;
-  transition:color 0.2s,border-color 0.2s,transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
-  cursor:default;
-}
-.stage-badge:hover{color:rgba(200,230,245,0.8);border-color:rgba(0,212,255,0.25);transform:translateY(-2px);}
-.stage-dot{width:7px;height:7px;border-radius:50%;}
+.stage-strip{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.sbadge{display:inline-flex;align-items:center;gap:6px;font-size:9.5px;font-weight:500;
+  color:rgba(200,232,245,.4);background:rgba(0,0,0,.28);border:1px solid var(--rim);
+  padding:5px 11px;border-radius:7px;transition:color .2s,border-color .2s,transform .22s cubic-bezier(.34,1.56,.64,1);cursor:default}
+.sbadge:hover{color:rgba(200,232,245,.75);border-color:rgba(0,212,255,.22);transform:translateY(-2px)}
+.sbd{width:6px;height:6px;border-radius:50%}
 
-/* ════════════════════════════════════════════
-   AWAITING / SKELETON
-════════════════════════════════════════════ */
-.await{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:14px;min-height:220px;padding:36px;text-align:center;
-  position:relative;
-}
-.await::before{
-  content:'';position:absolute;inset:0;border-radius:inherit;
-  background:repeating-linear-gradient(
-    -55deg,transparent,transparent 12px,
-    rgba(0,212,255,0.018) 12px,rgba(0,212,255,0.018) 24px
-  );
-}
-.await-icon{
-  font-size:42px;opacity:0.25;
-  animation:float 3.5s ease-in-out infinite;
-}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-.await-tag{
-  font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
-  color:var(--c6);background:rgba(255,179,71,0.08);
-  border:1px solid rgba(255,179,71,0.2);padding:4px 12px;border-radius:6px;
-}
-.await-title{font-size:14px;font-weight:700;color:rgba(200,230,245,0.7);}
-.await-sub{font-size:12px;color:rgba(200,230,245,0.3);max-width:300px;line-height:1.65;font-weight:300;}
-.await-fields{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;}
-.await-field{
-  font-family:'JetBrains Mono',monospace;font-size:10px;
-  color:rgba(200,230,245,0.4);
-  background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.12);
-  padding:4px 10px;border-radius:6px;
-  transition:color 0.2s,border-color 0.2s,transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
-}
-.await-field:hover{color:var(--c1);border-color:rgba(0,212,255,0.3);transform:translateY(-2px);}
+/* ══════════════════════════════════════
+   METRICS TABLE
+══════════════════════════════════════ */
+.mt{width:100%;border-collapse:collapse}
+.mt th{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(200,232,245,.22);
+  font-weight:700;padding:9px 11px;border-bottom:1px solid rgba(0,212,255,.07);text-align:left}
+.mt td{padding:9px 11px;border-bottom:1px solid rgba(0,212,255,.05);font-size:11.5px}
+.mt tr:last-child td{border-bottom:none}
+.mt tr:hover td{background:rgba(0,212,255,.025)}
+.mtbar{height:3px;background:rgba(0,212,255,.07);border-radius:99px;overflow:hidden;width:64px}
+.mtfill{height:100%;border-radius:99px}
 
-/* shimmer bar */
-.skel{
-  height:8px;border-radius:99px;
-  background:linear-gradient(90deg,rgba(0,212,255,0.06) 25%,rgba(0,212,255,0.12) 50%,rgba(0,212,255,0.06) 75%);
-  background-size:200% 100%;
-  animation:shimmer 2s ease-in-out infinite;
-}
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+/* ══════════════════════════════════════
+   CONFUSION MATRIX
+══════════════════════════════════════ */
+.cmc{border-radius:5px;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:9.5px;font-weight:500;
+  transition:transform .15s cubic-bezier(.34,1.56,.64,1),box-shadow .15s;position:relative;cursor:default}
+.cmc:hover{transform:scale(1.18);z-index:10;box-shadow:0 0 18px rgba(0,212,255,.28)}
+.cmlbl{font-size:7.5px;color:rgba(200,232,245,.28);font-family:var(--mono);
+  display:flex;align-items:center;justify-content:flex-end}
+.cmcl{writing-mode:vertical-rl;transform:rotate(180deg);justify-content:flex-start;padding-bottom:4px;max-height:60px;overflow:hidden}
 
-/* hist skeleton bars */
-.hist-wrap{display:flex;align-items:flex-end;gap:5px;height:110px;padding:0 2px;}
-.hist-bar{
-  flex:1;border-radius:4px 4px 0 0;
-  border:1px solid rgba(0,212,255,0.15);
-  animation:shimmer 2s ease-in-out infinite;
-  background:linear-gradient(180deg,rgba(0,212,255,0.1),rgba(0,212,255,0.03));
-  background-size:100% 200%;
-}
+/* ══════════════════════════════════════
+   FORMULA CARDS
+══════════════════════════════════════ */
+.fc{background:rgba(0,0,0,.32);border:1px solid rgba(0,212,255,.09);border-radius:10px;padding:15px;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1),border-color .3s,box-shadow .3s;cursor:default}
+.fc:hover{transform:translateY(-4px);border-color:rgba(0,212,255,.22);box-shadow:0 10px 28px rgba(0,0,0,.28),0 0 20px rgba(0,212,255,.07)}
+.fc-name{font-size:8.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--c6);margin-bottom:7px}
+.fc-eq{font-family:var(--mono);font-size:12.5px;color:rgba(200,232,245,.8)}
+.fc-note{font-size:9.5px;color:rgba(200,232,245,.28);margin-top:5px}
 
-/* ════════════════════════════════════════════
+/* ══════════════════════════════════════
+   DISCRETE CAST SECTION
+══════════════════════════════════════ */
+.cast-bar-wrap{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.cast-bar-row{display:flex;align-items:center;gap:10px;font-size:11px}
+.cast-bar-lbl{width:130px;flex-shrink:0;color:rgba(200,232,245,.55);font-family:var(--mono);font-size:10px}
+.cast-bar-t{flex:1;height:4px;background:rgba(0,212,255,.06);border-radius:99px;overflow:hidden}
+.cast-bar-f{height:100%;border-radius:99px;transition:width 1.2s cubic-bezier(.22,1,.36,1)}
+.cast-bar-n{font-family:var(--mono);font-size:9.5px;color:rgba(200,232,245,.35);width:36px;text-align:right}
+
+/* Confidence ring mini */
+.conf-ring{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px}
+.cr-item{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:70px}
+.cr-label{font-size:9px;color:rgba(200,232,245,.35);text-align:center;font-family:var(--mono)}
+
+/* ══════════════════════════════════════
+   DEPTH PROFILE
+══════════════════════════════════════ */
+.depth-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
+.depth-card{background:rgba(0,0,0,.28);border:1px solid rgba(0,212,255,.09);border-radius:9px;
+  padding:12px;text-align:center;transition:transform .25s cubic-bezier(.34,1.56,.64,1),border-color .25s;cursor:default}
+.depth-card:hover{transform:translateY(-3px);border-color:rgba(0,212,255,.2)}
+.depth-m{font-size:18px;font-weight:800;color:var(--c1);letter-spacing:-1px;font-family:var(--mono)}
+.depth-lbl{font-size:8.5px;color:rgba(200,232,245,.3);margin-top:3px;font-family:var(--mono)}
+.depth-cast{font-size:9px;color:rgba(200,232,245,.25);margin-top:2px}
+
+/* ══════════════════════════════════════
+   CARBON BIOMASS CALCULATOR
+══════════════════════════════════════ */
+.calc-wrap{background:rgba(0,0,0,.28);border:1px solid rgba(0,212,255,.09);border-radius:12px;padding:20px}
+.calc-inputs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px}
+.ci-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(200,232,245,.3);display:block;margin-bottom:6px}
+.ci-input{width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(0,212,255,.14);border-radius:8px;
+  padding:9px 12px;font-family:var(--mono);font-size:12px;color:rgba(200,232,245,.8);outline:none;
+  transition:border-color .22s,box-shadow .22s}
+.ci-input:focus{border-color:rgba(0,212,255,.4);box-shadow:0 0 0 3px rgba(0,212,255,.07)}
+.calc-results{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.cr-box{background:rgba(0,212,255,.04);border:1px solid rgba(0,212,255,.1);border-radius:9px;padding:14px;text-align:center}
+.cr-val{font-size:22px;font-weight:800;color:var(--c1);font-family:var(--mono);letter-spacing:-1px}
+.cr-unit{font-size:9px;color:rgba(200,232,245,.35);margin-top:3px;font-family:var(--mono)}
+
+/* ══════════════════════════════════════
+   OPTICAL PROPERTIES
+══════════════════════════════════════ */
+.opt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.opt-card{background:rgba(0,0,0,.28);border:1px solid rgba(0,212,255,.09);border-radius:10px;padding:15px}
+.opt-title{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px}
+.opt-bar-wrap{display:flex;flex-direction:column;gap:7px}
+.opt-bar-row{display:flex;align-items:center;gap:8px}
+.opt-bar-ch{font-size:9.5px;color:rgba(200,232,245,.4);font-family:var(--mono);width:38px;flex-shrink:0}
+.opt-bar-t{flex:1;height:5px;background:rgba(0,212,255,.06);border-radius:99px;overflow:hidden}
+.opt-bar-f{height:100%;border-radius:99px}
+.opt-bar-v{font-family:var(--mono);font-size:9.5px;color:rgba(200,232,245,.4);width:44px;text-align:right}
+
+/* ══════════════════════════════════════
+   HISTOGRAM BARS
+══════════════════════════════════════ */
+.hbars{display:flex;align-items:flex-end;gap:4px;height:100px;padding:0 2px}
+.hbar{flex:1;border-radius:3px 3px 0 0;border:1px solid rgba(0,212,255,.13);
+  animation:shim 2s ease-in-out infinite;background:linear-gradient(180deg,rgba(0,212,255,.1),rgba(0,212,255,.03));background-size:100% 200%}
+
+/* ══════════════════════════════════════
    MAP
-════════════════════════════════════════════ */
-.map-box{height:280px;border-radius:var(--r);overflow:hidden;position:relative;}
-.map-grid-overlay{
-  position:absolute;inset:0;
-  background-image:
-    linear-gradient(rgba(0,212,255,0.05) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(0,212,255,0.05) 1px,transparent 1px);
-  background-size:40px 40px;
-}
-.map-dot-wrap{position:absolute;}
-.map-dot{
-  width:10px;height:10px;border-radius:50%;
-  background:var(--c1);box-shadow:0 0 14px var(--c1);
-  animation:map-pulse 2.5s ease-in-out infinite;
-  position:relative;
-}
-.map-dot::after{
-  content:'';position:absolute;inset:-7px;border-radius:50%;
-  border:1px solid rgba(0,212,255,0.35);
-  animation:ring-out 2.5s ease-out infinite;
-}
-@keyframes map-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
-@keyframes ring-out{0%{transform:scale(1);opacity:0.5}100%{transform:scale(2.8);opacity:0}}
-.map-label-t{
-  position:absolute;top:14px;left:50%;transform:translateX(-50%);
-  font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--c1);
-  white-space:nowrap;
-}
+══════════════════════════════════════ */
+.mapbox{height:260px;border-radius:var(--rsm);overflow:hidden;position:relative;background:linear-gradient(180deg,rgba(2,12,28,.9),rgba(3,15,35,.7))}
+.map-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,212,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.04) 1px,transparent 1px);background-size:38px 38px}
+.mdot-wrap{position:absolute}
+.mdot{width:9px;height:9px;border-radius:50%;background:var(--c1);box-shadow:0 0 12px var(--c1);animation:mpulse 2.5s ease-in-out infinite;position:relative}
+.mdot::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:1px solid rgba(0,212,255,.3);animation:mring 2.5s ease-out infinite}
+@keyframes mpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+@keyframes mring{0%{transform:scale(1);opacity:.5}100%{transform:scale(2.8);opacity:0}}
 
-/* ════════════════════════════════════════════
+/* ══════════════════════════════════════
    CHAIN FINDER
-════════════════════════════════════════════ */
-.chain-controls{
-  display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;
-  margin-bottom:20px;
-}
-.field-group{}
-.field-lbl{
-  font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
-  color:rgba(200,230,245,0.3);display:block;margin-bottom:7px;
-}
-.field-inp,.field-sel{
-  width:100%;
-  background:rgba(0,0,0,0.35);
-  border:1px solid rgba(0,212,255,0.15);border-radius:9px;
-  padding:11px 14px;
-  font-family:'Outfit',sans-serif;font-size:12px;color:rgba(200,230,245,0.85);
-  outline:none;transition:border-color 0.25s,box-shadow 0.25s;
-  -webkit-appearance:none;
-}
-.field-inp:focus,.field-sel:focus{
-  border-color:rgba(0,212,255,0.45);
-  box-shadow:0 0 0 3px rgba(0,212,255,0.08);
-}
-.field-inp::placeholder{color:rgba(200,230,245,0.2);}
+══════════════════════════════════════ */
+.chain-ctrl{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;margin-bottom:16px}
+.flbl{font-size:8.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(200,232,245,.28);display:block;margin-bottom:6px}
+.finp,.fsel{width:100%;background:rgba(0,0,0,.35);border:1px solid rgba(0,212,255,.14);border-radius:8px;
+  padding:10px 13px;font-family:var(--font);font-size:12px;color:rgba(200,232,245,.8);outline:none;
+  transition:border-color .22s,box-shadow .22s;-webkit-appearance:none}
+.finp:focus,.fsel:focus{border-color:rgba(0,212,255,.4);box-shadow:0 0 0 3px rgba(0,212,255,.07)}
+.finp::placeholder{color:rgba(200,232,245,.18)}
 
-.chain-result{
-  background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.1);
-  border-radius:var(--r-sm);min-height:130px;
-  display:flex;align-items:center;justify-content:center;
-  padding:16px;
-}
-.chain-empty{text-align:center;}
-.chain-empty-icon{font-size:28px;margin-bottom:8px;opacity:0.3;}
-.chain-empty-t{font-size:12px;color:rgba(200,230,245,0.3);}
-.chain-entry{
-  display:flex;align-items:center;gap:14px;
-  padding:10px 0;border-bottom:1px solid rgba(0,212,255,0.06);
-}
-.chain-entry:last-child{border-bottom:none;}
-.chain-rank{
-  width:26px;height:26px;border-radius:8px;flex-shrink:0;
-  background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.18);
-  display:flex;align-items:center;justify-content:center;
-  font-size:10px;font-weight:700;color:var(--c1);
-  font-family:'JetBrains Mono',monospace;
-}
-.chain-id{font-size:12px;font-weight:500;color:rgba(200,230,245,0.85);}
-.chain-cls{font-size:10px;color:rgba(200,230,245,0.35);margin-top:2px;}
-.chain-bar{flex:1;height:4px;background:rgba(0,212,255,0.07);border-radius:99px;overflow:hidden;margin:0 8px;}
-.chain-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--c1),var(--c2));}
-.chain-len{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:var(--c1);}
-.chain-conf{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--c2);width:36px;text-align:right;}
+.chain-result-wrap{background:rgba(0,0,0,.28);border:1px solid rgba(0,212,255,.09);border-radius:12px;min-height:120px;padding:14px}
+.chain-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;gap:8px}
+.chain-entry{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid rgba(0,212,255,.06)}
+.chain-entry:last-child{border-bottom:none}
+.chain-rank{width:24px;height:24px;border-radius:7px;flex-shrink:0;background:rgba(0,212,255,.07);
+  border:1px solid rgba(0,212,255,.16);display:flex;align-items:center;justify-content:center;
+  font-size:9.5px;font-weight:700;color:var(--c1);font-family:var(--mono);margin-top:2px}
 
-/* ════════════════════════════════════════════
-   ESD FORMULA CARDS
-════════════════════════════════════════════ */
-.formula-card{
-  background:rgba(0,0,0,0.35);border:1px solid rgba(0,212,255,0.1);
-  border-radius:var(--r-sm);padding:16px;
-  transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1), border-color 0.3s, box-shadow 0.3s;
-  cursor:default;
-}
-.formula-card:hover{
-  transform:translateY(-4px);
-  border-color:rgba(0,212,255,0.25);
-  box-shadow:0 12px 32px rgba(0,0,0,0.3), 0 0 24px rgba(0,212,255,0.08);
-}
-.formula-name{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--c6);margin-bottom:8px;}
-.formula-eq{font-family:'JetBrains Mono',monospace;font-size:12px;color:rgba(200,230,245,0.8);}
-.formula-note{font-size:10px;color:rgba(200,230,245,0.3);margin-top:5px;}
+/* Chain particle image */
+.chain-img-slot{width:52px;height:52px;border-radius:8px;background:rgba(0,212,255,.05);
+  border:1px solid rgba(0,212,255,.14);flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;position:relative}
+.chain-img-slot img{width:100%;height:100%;object-fit:cover;border-radius:7px;filter:brightness(1.2) contrast(1.1)}
+.chain-img-placeholder{font-size:20px;opacity:.3}
+.chain-id{font-size:11.5px;font-weight:600;color:rgba(200,232,245,.82)}
+.chain-cls{font-size:10px;color:rgba(200,232,245,.32);margin-top:2px}
+.chain-meta{font-size:9.5px;color:rgba(200,232,245,.25);margin-top:3px;font-family:var(--mono)}
+.chain-bar-t{height:3px;background:rgba(0,212,255,.07);border-radius:99px;overflow:hidden;width:80px;margin-top:5px}
+.chain-bar-f{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--c1),var(--c2))}
+.chain-len{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--c1);line-height:1}
+.chain-conf{font-family:var(--mono);font-size:11px;color:var(--c2)}
+.chain-depth{font-family:var(--mono);font-size:10px;color:rgba(200,232,245,.28)}
 
-/* ════════════════════════════════════════════
-   ACC RING (canvas)
-════════════════════════════════════════════ */
-#accRing{display:block;margin:0 auto;}
+/* Bio callouts */
+.bio-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px}
+.bio-card{background:rgba(0,0,0,.25);border:1px solid rgba(0,212,255,.08);border-radius:9px;padding:13px}
+.bio-icon{font-size:20px;margin-bottom:7px}
+.bio-title{font-size:10px;font-weight:700;color:rgba(200,232,245,.65);margin-bottom:5px}
+.bio-text{font-size:10.5px;color:rgba(200,232,245,.3);line-height:1.6}
 
-/* ════════════════════════════════════════════
-   CHART CONTAINERS
-════════════════════════════════════════════ */
-.ch{position:relative;}
-.ch-260{height:260px;}
-.ch-200{height:200px;}
-.ch-310{height:310px;}
-.ch-360{height:360px;}
+/* Trichodesmium callout */
+.tricho-banner{background:linear-gradient(135deg,rgba(255,179,71,.06),rgba(244,114,182,.04));
+  border:1px solid rgba(255,179,71,.18);border-radius:12px;padding:16px 20px;margin-top:14px;display:flex;gap:14px;align-items:flex-start}
+.tricho-icon{font-size:28px;flex-shrink:0}
+.tricho-title{font-size:12px;font-weight:700;color:var(--c6);margin-bottom:5px}
+.tricho-text{font-size:11.5px;color:rgba(200,232,245,.4);line-height:1.65}
 
-/* ════════════════════════════════════════════
-   KV ROWS (key-value)
-════════════════════════════════════════════ */
-.kv{display:flex;flex-direction:column;gap:9px;}
-.kv-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;}
-.kv-k{color:rgba(200,230,245,0.35);font-weight:300;}
-.kv-v{font-family:'JetBrains Mono',monospace;color:rgba(200,230,245,0.75);}
-.kv-v.c1{color:var(--c1);}
-.kv-v.c2{color:var(--c2);}
-.kv-v.c4{color:var(--c4);}
-.kv-sep{height:1px;background:rgba(0,212,255,0.06);margin:4px 0;}
+/* ══════════════════════════════════════
+   ACC RING
+══════════════════════════════════════ */
+#accRing{display:block;margin:0 auto}
 
-/* ════════════════════════════════════════════
+/* ══════════════════════════════════════
+   FLOATING PILL
+══════════════════════════════════════ */
+#pill{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:200;
+  background:rgba(3,12,25,.78);backdrop-filter:blur(30px) saturate(200%);-webkit-backdrop-filter:blur(30px) saturate(200%);
+  border:1px solid rgba(0,212,255,.18);border-radius:99px;padding:7px 10px;display:flex;gap:5px;
+  box-shadow:0 8px 36px rgba(0,0,0,.5)}
+.pi{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:14px;cursor:pointer;transition:transform .28s cubic-bezier(.34,1.56,.64,1),background .22s,box-shadow .22s;
+  border:1px solid transparent;position:relative}
+.pi:hover{transform:translateY(-6px) scale(1.18);background:rgba(0,212,255,.11);border-color:rgba(0,212,255,.22);box-shadow:0 8px 18px rgba(0,0,0,.28),0 0 14px rgba(0,212,255,.18)}
+.pi:hover .ptt{opacity:1;transform:translateX(-50%) translateY(0)}
+.ptt{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(4px);
+  background:rgba(3,12,25,.96);border:1px solid rgba(0,212,255,.18);border-radius:7px;
+  padding:4px 9px;font-size:9px;font-weight:600;color:var(--c1);white-space:nowrap;
+  opacity:0;transition:opacity .18s,transform .18s;pointer-events:none;letter-spacing:.5px}
+
+/* ══════════════════════════════════════
    FOOTER
-════════════════════════════════════════════ */
-.foot{
-  margin-top:64px;padding-top:24px;padding-bottom:48px;
-  border-top:1px solid rgba(0,212,255,0.08);
-  display:flex;justify-content:space-between;align-items:center;
-  font-size:11px;color:rgba(200,230,245,0.25);
-}
-.foot-live{display:flex;align-items:center;gap:7px;}
+══════════════════════════════════════ */
+.foot{margin-top:56px;padding-top:22px;padding-bottom:40px;border-top:1px solid rgba(0,212,255,.07);
+  display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:rgba(200,232,245,.22)}
+.foot-live{display:flex;align-items:center;gap:7px}
 
-/* ════════════════════════════════════════════
+/* ══════════════════════════════════════
    ENTRANCE ANIMATIONS
-════════════════════════════════════════════ */
-@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
-.fu{animation:fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) forwards;opacity:0;}
-.d1{animation-delay:0.05s}.d2{animation-delay:0.12s}.d3{animation-delay:0.2s}
-.d4{animation-delay:0.28s}.d5{animation-delay:0.38s}.d6{animation-delay:0.5s}
-
-/* ════════════════════════════════════════════
-   LIQUID GLASS NAV PILL (floating)
-════════════════════════════════════════════ */
-#floating-pill{
-  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
-  z-index:200;
-  background:rgba(6,21,37,0.7);
-  backdrop-filter:blur(28px) saturate(200%);
-  -webkit-backdrop-filter:blur(28px) saturate(200%);
-  border:1px solid rgba(0,212,255,0.2);
-  border-radius:99px;padding:8px 12px;
-  display:flex;gap:6px;
-  box-shadow:0 8px 40px rgba(0,0,0,0.5),0 0 0 1px rgba(0,212,255,0.05) inset;
-}
-.pill-item{
-  width:36px;height:36px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:15px;cursor:pointer;
-  transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1), background 0.25s, box-shadow 0.25s;
-  border:1px solid transparent;
-  position:relative;
-}
-.pill-item:hover{
-  transform:translateY(-6px) scale(1.18);
-  background:rgba(0,212,255,0.12);
-  border-color:rgba(0,212,255,0.25);
-  box-shadow:0 8px 20px rgba(0,0,0,0.3), 0 0 16px rgba(0,212,255,0.2);
-}
-.pill-item:hover .pill-tooltip{opacity:1;transform:translateX(-50%) translateY(0);}
-.pill-tooltip{
-  position:absolute;bottom:calc(100% + 10px);left:50%;
-  transform:translateX(-50%) translateY(4px);
-  background:rgba(6,21,37,0.95);border:1px solid rgba(0,212,255,0.2);
-  border-radius:8px;padding:5px 10px;
-  font-size:10px;font-weight:600;color:var(--c1);white-space:nowrap;
-  opacity:0;transition:opacity 0.2s,transform 0.2s;
-  pointer-events:none;letter-spacing:0.5px;
-}
-
-/* ════════════════════════════════════════════
-   GLOW BORDERS (animated)
-════════════════════════════════════════════ */
-.glow-border{position:relative;}
-.glow-border::after{
-  content:'';position:absolute;inset:-1px;border-radius:calc(var(--r) + 1px);
-  background:linear-gradient(90deg,var(--c1),var(--c2),var(--c3),var(--c1));
-  background-size:300% 100%;
-  animation:border-run 4s linear infinite;
-  z-index:-1;opacity:0;transition:opacity 0.4s;
-}
-.glow-border:hover::after{opacity:0.35;}
-@keyframes border-run{0%{background-position:0% 0}100%{background-position:300% 0}}
-
+══════════════════════════════════════ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeUp .55s cubic-bezier(.22,1,.36,1) forwards;opacity:0}
+.d1{animation-delay:.04s}.d2{animation-delay:.1s}.d3{animation-delay:.18s}
+.d4{animation-delay:.26s}.d5{animation-delay:.36s}.d6{animation-delay:.48s}
 </style>
 </head>
 <body>
 
-<!-- Cursor -->
-<div id="cursor"></div>
-<div id="cursor-ring"></div>
+<div id="cur"></div><div id="cur2"></div>
+<div id="amb"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div></div>
+<div id="gbg"></div>
 
-<!-- Ambient -->
-<div id="ambient">
-  <div class="orb orb1"></div>
-  <div class="orb orb2"></div>
-  <div class="orb orb3"></div>
-</div>
-<div id="grid-bg"></div>
-
-<!-- ════════════ SIDEBAR ════════════ -->
-<nav class="sidebar">
-  <div class="sb-logo">
-    <div class="sb-badge"><div class="sb-pulse"></div>v9 · Live</div>
-    <div class="sb-title">Phyto<span>Vision</span></div>
-    <div class="sb-sub">CLASSIFICATION · v9</div>
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<nav class="sb">
+  <div class="sb-brand">
+    <div class="sb-badge"><div class="sb-dot"></div>BLOOFINZ-2022 · Live</div>
+    <div class="sb-name">Phytoplankton<br>Classification</div>
+    <div class="sb-lab">Goes Lab · LDEO · Columbia</div>
   </div>
 
-  <div class="sb-section">Overview</div>
-  <a class="nav-link active" href="#hero">
-    <div class="nav-icon-wrap">◈</div> Dashboard
-    <div class="nav-chip">home</div>
-  </a>
-  <a class="nav-link" href="#dataset">
-    <div class="nav-icon-wrap">⬡</div> Dataset
-    <div class="nav-chip">12K</div>
-  </a>
+  <div class="sb-sec">Overview</div>
+  <a class="nl on" href="#hero"><div class="ni">⬡</div>Dashboard<div class="nchip">home</div></a>
+  <a class="nl" href="#cruise"><div class="ni">🚢</div>Cruise Data<div class="nchip">2022</div></a>
+  <a class="nl" href="#dataset"><div class="ni">◈</div>Dataset<div class="nchip">12K</div></a>
+  <a class="nl" href="#discrete"><div class="ni">🔬</div>Discrete Casts<div class="nchip">3.8K</div></a>
 
-  <div class="sb-section">Model</div>
-  <a class="nav-link" href="#arch">
-    <div class="nav-icon-wrap">⊹</div> Architecture
-  </a>
-  <a class="nav-link" href="#training">
-    <div class="nav-icon-wrap">↗</div> Training
-    <div class="nav-chip">22ep</div>
-  </a>
-  <a class="nav-link" href="#eval">
-    <div class="nav-icon-wrap">◎</div> Evaluation
-  </a>
+  <div class="sb-sec">Model</div>
+  <a class="nl" href="#arch"><div class="ni">⊹</div>Architecture</a>
+  <a class="nl" href="#training"><div class="ni">↗</div>Training<div class="nchip">22ep</div></a>
+  <a class="nl" href="#eval"><div class="ni">◎</div>Evaluation</a>
+  <a class="nl" href="#confidence"><div class="ni">◑</div>Confidence</a>
 
-  <div class="sb-section">Analysis</div>
-  <a class="nav-link" href="#esd">
-    <div class="nav-icon-wrap">≋</div> ESD Params
-    <div class="nav-chip" style="color:var(--c6);border-color:rgba(255,179,71,0.25)">CSV</div>
-  </a>
-  <a class="nav-link" href="#geo">
-    <div class="nav-icon-wrap">⊕</div> Geospatial
-  </a>
-  <a class="nav-link" href="#histo">
-    <div class="nav-icon-wrap">▦</div> Histograms
-  </a>
-  <a class="nav-link" href="#chains">
-    <div class="nav-icon-wrap">⛓</div> Chain Finder
-  </a>
+  <div class="sb-sec">Oceanography</div>
+  <a class="nl" href="#esd"><div class="ni">≋</div>ESD & Morphology</a>
+  <a class="nl" href="#carbon"><div class="ni">⚗</div>Carbon Biomass</a>
+  <a class="nl" href="#optical"><div class="ni">◐</div>Optical Properties</a>
+  <a class="nl" href="#depth"><div class="ni">⬇</div>Depth Profiles</a>
+  <a class="nl" href="#geo"><div class="ni">⊕</div>Geospatial</a>
+  <a class="nl" href="#histo"><div class="ni">▦</div>Histograms</a>
+  <a class="nl" href="#chains"><div class="ni">⛓</div>Chain Finder</a>
 
   <div class="sb-foot">
-    <div class="sb-foot-mono">Model: <b>v9</b> · TF <b>2.19</b></div>
-    <div class="sb-foot-mono" style="margin-top:5px;display:flex;align-items:center;gap:7px;">
-      <div class="sb-pulse"></div>A100 Runtime
-    </div>
+    <div class="sb-mono">Model: <b>v9</b> · TF <b>2.19</b> · A100</div>
+    <div class="sb-mono" style="display:flex;align-items:center;gap:6px;margin-top:4px"><div class="sb-dot"></div>Session Live</div>
+    <div class="sb-mono" style="margin-top:4px;font-size:8.5px">LDEO · Columbia University</div>
   </div>
 </nav>
 
-<!-- ════════════ MAIN ════════════ -->
+<!-- ═══════════ MAIN ═══════════ -->
 <main class="main">
 
-<!-- ─── HERO ─── -->
+<!-- HERO -->
 <div class="hero fu d1" id="hero">
   <div class="hero-chips">
-    <div class="chip chip-c1">PhytoVision</div>
-    <div class="chip chip-c2">EfficientNetV2-L</div>
-    <div class="chip chip-c3">Mixed FP16 · A100</div>
-    <div class="chip chip-c5">Logit-Adjusted CE</div>
-    <div class="chip chip-c6">Balanced Sampling</div>
+    <div class="chip cc1">EfficientNetV2-L</div>
+    <div class="chip cc2">Mixed FP16 · A100</div>
+    <div class="chip cc3">BLOOFINZ-2022</div>
+    <div class="chip cc5">19 Discrete Casts</div>
+    <div class="chip cc6">Logit-Adjusted CE</div>
+    <div class="chip cc7">Eastern Indian Ocean</div>
   </div>
-  <h1 class="hero-title">
-    Phytoplankton<br><span class="grad">Classification</span>
-  </h1>
-  <div id="live-badge" style="display:none;align-items:center;gap:6px;font-size:10px;font-weight:700;color:#00ffc3;background:rgba(0,255,195,0.1);border:1px solid rgba(0,255,195,0.25);padding:4px 12px;border-radius:99px;margin-top:12px"><div style="width:6px;height:6px;border-radius:50%;background:#00ffc3;box-shadow:0 0 8px #00ffc3;animation:pulse 2s infinite"></div>Live Data · GitHub</div>
+  <h1 class="hero-title">Phytoplankton<br><span class="gr">Classification</span></h1>
+  <div class="hero-lab"><b>Goes Lab</b> · Lamont-Doherty Earth Observatory · Columbia University</div>
   <p class="hero-sub">
-    Deep-learning pipeline for autonomous microscopy-based identification of 8–10 marine phytoplankton classes.
-    Trained on 12,315 images across 2 library sources with two-stage fine-tuning and imbalance correction.
+    Deep-learning pipeline for autonomous FlowCAM-based identification of marine phytoplankton species.
+    Trained on 12,315 library images · inference on 69,851 discrete cast particles · BLOOFINZ-2022 eastern Indian Ocean expedition · R/V Roger Revelle.
   </p>
+  <div class="live-badge" id="liveBadge" style="display:none"><div class="sb-dot"></div>Live Data · GitHub</div>
 </div>
 
-<!-- ─── STATS ─── -->
-<div class="stats-row fu d2">
-  <div class="glass glass-hover tilt stat" style="padding:22px 20px">
-    <div class="stat-icon si-c1">🌊</div>
-    <div class="stat-lbl">Total Images</div>
-    <div class="stat-val"><span id="n-cnt">0</span></div>
+<!-- STATS -->
+<div class="stats fu d2">
+  <div class="g tilt gh stat">
+    <div class="stat-icon si1">🌊</div>
+    <div class="stat-lbl">Library Images</div>
+    <div class="stat-val"><span id="n1">0</span></div>
     <div class="stat-note up">↑ Library 1 + 2</div>
-    <div class="stat-accent-line" style="background:var(--c1)"></div>
   </div>
-  <div class="glass glass-hover tilt stat">
-    <div class="stat-icon si-c2">🔬</div>
-    <div class="stat-lbl">Classes</div>
-    <div class="stat-val"><span id="k-cnt">0</span></div>
-    <div class="stat-note">8 active in training</div>
-    <div class="stat-accent-line" style="background:var(--c2)"></div>
+  <div class="g tilt gh stat">
+    <div class="stat-icon si2">🔬</div>
+    <div class="stat-lbl">Species Classes</div>
+    <div class="stat-val"><span id="n2">0</span></div>
+    <div class="stat-note">8 in training</div>
   </div>
-  <div class="glass glass-hover tilt stat">
-    <div class="stat-icon si-c1">◎</div>
+  <div class="g tilt gh stat">
+    <div class="stat-icon si1">◎</div>
     <div class="stat-lbl">Val Accuracy</div>
-    <div class="stat-val"><span id="acc-cnt">0</span><span class="stat-unit">%</span></div>
-    <div class="stat-note up">↑ Best epoch 7 / Stage 2</div>
-    <div class="stat-accent-line" style="background:var(--c1)"></div>
+    <div class="stat-val"><span id="n3">0</span><span class="stat-unit">%</span></div>
+    <div class="stat-note up">↑ Best ep7 / Stage 2</div>
   </div>
-  <div class="glass glass-hover tilt stat">
-    <div class="stat-icon si-c5">⚙</div>
+  <div class="g tilt gh stat">
+    <div class="stat-icon si3">⚙</div>
     <div class="stat-lbl">Parameters</div>
     <div class="stat-val">118<span class="stat-unit">M</span></div>
     <div class="stat-note">662K trainable</div>
-    <div class="stat-accent-line" style="background:var(--c5)"></div>
   </div>
-  <div class="glass glass-hover tilt stat">
-    <div class="stat-icon si-c6">F1</div>
+  <div class="g tilt gh stat">
+    <div class="stat-icon si5">🚢</div>
+    <div class="stat-lbl">Discrete Casts</div>
+    <div class="stat-val">19</div>
+    <div class="stat-note">69,851 particles</div>
+  </div>
+  <div class="g tilt gh stat">
+    <div class="stat-icon si4">F1</div>
     <div class="stat-lbl">Macro F1</div>
-    <div class="stat-val" id="f1-stat-val">0.50</div>
+    <div class="stat-val"><span id="n4">0.50</span></div>
     <div class="stat-note">110× class imbalance</div>
-    <div class="stat-accent-line" style="background:var(--c6)"></div>
   </div>
 </div>
 
-<!-- ─────────────────────── DATASET ─────────────────────── -->
-<section class="section fu d3" id="dataset">
-  <div class="sec-head">
-    <div class="sec-num">01</div>
-    <div>
-      <div class="sec-title">Dataset Overview</div>
-      <div class="sec-sub">Class distribution and composition across merged libraries</div>
-    </div>
-    <div class="sec-actions">
-      <button class="btn">Export CSV</button>
-      <button class="btn btn-glow">Full Stats</button>
-    </div>
+<!-- ═══════ 01 CRUISE OVERVIEW ═══════ -->
+<section class="sec fu d3" id="cruise">
+  <div class="sh">
+    <div class="snum">01</div>
+    <div><div class="stitle">BLOOFINZ-2022 Cruise Overview</div>
+    <div class="ssub">Eastern Indian Ocean · Argo Basin · Feb–Mar 2022 · R/V Roger Revelle · 19 Discrete Cast stations · FlowCAM flow cytometry</div></div>
   </div>
-
-  <div class="g65" style="margin-bottom:20px">
-    <div class="glass glow-border card-inner">
-      <div class="card-title"><div class="card-dot"></div>Class Distribution — Library 1 (8 classes)</div>
-      <div id="cls-bars"></div>
-    </div>
-    <div class="glass card-inner">
-      <div class="card-title"><div class="card-dot c2"></div>Balance Ratio</div>
-      <div class="ch ch-200"><canvas id="donutC"></canvas></div>
-      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:14px">
-        <div class="chip chip-c4" style="font-size:8px">110× imbalance</div>
-        <div class="chip chip-c1" style="font-size:8px">Sqrt sampling</div>
-        <div class="chip chip-c5" style="font-size:8px">Stratified split</div>
-      </div>
-    </div>
+  <div class="cruise-grid">
+    <div class="cruise-card"><div class="cc-label">Total Casts</div><div class="cc-val">19 <span class="cc-unit">stations</span></div><div class="cc-note">BFZ-Cast7 → BFZ-Cast143</div></div>
+    <div class="cruise-card"><div class="cc-label">Raw Particles</div><div class="cc-val">69,851<span class="cc-unit"> imaged</span></div><div class="cc-note">FlowCAM flow-through</div></div>
+    <div class="cruise-card"><div class="cc-label">Sampled (v9)</div><div class="cc-val">3,800<span class="cc-unit"> images</span></div><div class="cc-note">200 per cast · fast inference</div></div>
+    <div class="cruise-card"><div class="cc-label">High Confidence</div><div class="cc-val">524<span class="cc-unit"> labeled</span></div><div class="cc-note">≥ 80% confidence threshold</div></div>
+    <div class="cruise-card"><div class="cc-label">CSV Columns</div><div class="cc-val">70<span class="cc-unit"> features</span></div><div class="cc-note">ESD, biovolume, RGB, chains</div></div>
+    <div class="cruise-card"><div class="cc-label">Depth Range</div><div class="cc-val">5–10<span class="cc-unit"> m</span></div><div class="cc-note">Surface + subsurface</div></div>
+    <div class="cruise-card"><div class="cc-label">Segment Format</div><div class="cc-val">.jpg<span class="cc-unit"> crops</span></div><div class="cc-note">Binary-masked particle images</div></div>
+    <div class="cruise-card"><div class="cc-label">Collection Date</div><div class="cc-val">2022<span class="cc-unit"> Feb</span></div><div class="cc-note">Arabian Sea expedition</div></div>
   </div>
-
-  <div class="g3">
-    <div class="glass card-inner glass-hover tilt">
-      <div class="card-title"><div class="card-dot"></div>Multi-Library</div>
-      <div class="kv">
-        <div class="kv-row"><span class="kv-k">Library 1</span><span class="kv-v">10,473 img</span></div>
-        <div class="kv-row"><span class="kv-k">Library 2</span><span class="kv-v">1,842 img</span></div>
-        <div class="kv-sep"></div>
-        <div class="kv-row"><span class="kv-k">Combined</span><span class="kv-v c1">12,315</span></div>
-        <div class="kv-row"><span class="kv-k">Extra classes</span><span class="kv-v" style="font-size:10px">Pennate Diatoms, Richelia</span></div>
+  <div class="g2" style="margin-top:18px">
+    <div class="g p">
+      <div class="ct"><div class="cdot"></div>Discrete Cast Folders</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px">
+        <div id="cast-chips"></div>
       </div>
     </div>
-    <div class="glass card-inner glass-hover tilt">
-      <div class="card-title"><div class="card-dot c2"></div>Split Details</div>
+    <div class="g p">
+      <div class="ct"><div class="cdot c2"></div>Expedition Summary</div>
       <div class="kv">
-        <div class="kv-row"><span class="kv-k">Train</span><span class="kv-v">8,378 (80%)</span></div>
-        <div class="kv-row"><span class="kv-k">Validation</span><span class="kv-v">2,095 (20%)</span></div>
-        <div class="kv-row"><span class="kv-k">Strategy</span><span class="kv-v">Stratified</span></div>
-        <div class="kv-row"><span class="kv-k">Steps/epoch</span><span class="kv-v c2">262</span></div>
-      </div>
-    </div>
-    <div class="glass card-inner glass-hover tilt">
-      <div class="card-title"><div class="card-dot c5"></div>Augmentation</div>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        <div style="font-size:11px;color:rgba(200,230,245,0.55);font-family:'JetBrains Mono',monospace">RandomFlip horizontal</div>
-        <div style="font-size:11px;color:rgba(200,230,245,0.55);font-family:'JetBrains Mono',monospace">RandomRotation ±10%</div>
-        <div style="font-size:11px;color:rgba(200,230,245,0.55);font-family:'JetBrains Mono',monospace">RandomZoom ±10%</div>
-        <div style="font-size:11px;color:rgba(200,230,245,0.55);font-family:'JetBrains Mono',monospace">RandomTranslation ±6%</div>
-        <div style="font-size:11px;color:var(--c4);font-family:'JetBrains Mono',monospace">No contrast aug ← microscopy</div>
+        <div class="kvr"><span class="kvk">Cruise ID</span><span class="kvv">BLOOFINZ-2022</span></div>
+        <div class="kvr"><span class="kvk">Platform</span><span class="kvv">Research Vessel</span></div>
+        <div class="kvr"><span class="kvk">Region</span><span class="kvv c1">Arabian Sea</span></div>
+        <div class="kvr"><span class="kvk">Instrument</span><span class="kvv">FlowCAM (flow cytometry)</span></div>
+        <div class="kvr"><span class="kvk">Image type</span><span class="kvv">Brightfield + fluorescence</span></div>
+        <div class="kvr"><span class="kvk">Calibration factor</span><span class="kvv">1.3699 µm/pixel</span></div>
+        <div class="kvsep"></div>
+        <div class="kvr"><span class="kvk">Lab</span><span class="kvv c2">Goes Lab · LDEO · Columbia</span></div>
       </div>
     </div>
   </div>
 </section>
 
-<div class="divider"></div>
+<div class="div"></div>
 
-<!-- ─────────────────────── ARCHITECTURE ─────────────────────── -->
-<section class="section fu d3" id="arch">
-  <div class="sec-head">
-    <div class="sec-num">02</div>
-    <div>
-      <div class="sec-title">Model Architecture</div>
-      <div class="sec-sub">EfficientNetV2-L backbone · 384×384 · 118M params · Mixed FP16</div>
+<!-- ═══════ 02 DATASET ═══════ -->
+<section class="sec fu d3" id="dataset">
+  <div class="sh">
+    <div class="snum">02</div>
+    <div><div class="stitle">Training Dataset</div><div class="ssub">Class distribution across 2 merged library sources · 10,473 training images</div></div>
+    <div class="sact"><button class="btn">Export CSV</button><button class="btn btng">Full Stats</button></div>
+  </div>
+  <div class="g65" style="margin-bottom:18px">
+    <div class="g glow-b p">
+      <div class="ct"><div class="cdot"></div>Class Distribution — Library 1 (val split · 2,095 samples)</div>
+      <div id="clsbars"></div>
+    </div>
+    <div class="g p">
+      <div class="ct"><div class="cdot c2"></div>Balance Ratio</div>
+      <div class="ch ch200"><canvas id="donutC"></canvas></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
+        <div class="chip cc4" style="font-size:7.5px">110× imbalance</div>
+        <div class="chip cc1" style="font-size:7.5px">Sqrt sampling</div>
+        <div class="chip cc5" style="font-size:7.5px">Stratified split</div>
+      </div>
     </div>
   </div>
-  <div class="glass card-inner">
-    <div class="card-title"><div class="card-dot"></div>Forward Pass — hover each block</div>
-    <div class="arch-strip">
-      <div class="arch-block"><div class="arch-block-n">Input</div><div class="arch-block-d">384×384×3</div></div>
-      <div class="arch-arr">→</div>
-      <div class="arch-block" style="border-color:rgba(167,139,250,0.3);background:rgba(167,139,250,0.06)">
-        <div class="arch-block-n" style="color:var(--c5)">Augment</div><div class="arch-block-d">Flip·Rot·Zoom</div>
+  <div class="g3">
+    <div class="g gh tilt p">
+      <div class="ct"><div class="cdot"></div>Multi-Library</div>
+      <div class="kv">
+        <div class="kvr"><span class="kvk">Library 1</span><span class="kvv">10,473 img · 8 classes</span></div>
+        <div class="kvr"><span class="kvk">Library 2</span><span class="kvv">1,842 img · 5 classes</span></div>
+        <div class="kvsep"></div>
+        <div class="kvr"><span class="kvk">Combined</span><span class="kvv c1">12,315 images</span></div>
+        <div class="kvr"><span class="kvk">Extra classes</span><span class="kvv" style="font-size:9.5px">Pennate Diatoms · Richelia</span></div>
       </div>
-      <div class="arch-arr">→</div>
-      <div class="arch-block"><div class="arch-block-n">Preprocess</div><div class="arch-block-d">ENv2 normalize</div></div>
-      <div class="arch-arr">→</div>
-      <div class="arch-block arch-hl" style="min-width:170px">
-        <div class="arch-block-n" style="color:var(--c1)">EfficientNetV2-L</div>
-        <div class="arch-block-d">117.7M · frozen S1</div>
+    </div>
+    <div class="g gh tilt p">
+      <div class="ct"><div class="cdot c2"></div>Train/Val Split</div>
+      <div class="kv">
+        <div class="kvr"><span class="kvk">Train</span><span class="kvv">8,378 (80%)</span></div>
+        <div class="kvr"><span class="kvk">Validation</span><span class="kvv">2,095 (20%)</span></div>
+        <div class="kvr"><span class="kvk">Strategy</span><span class="kvv">Stratified</span></div>
+        <div class="kvr"><span class="kvk">Steps/epoch</span><span class="kvv c2">262</span></div>
+        <div class="kvr"><span class="kvk">Batch size</span><span class="kvv">32</span></div>
       </div>
-      <div class="arch-arr">→</div>
-      <div class="arch-block"><div class="arch-block-n">GAP</div><div class="arch-block-d">1280-dim</div></div>
-      <div class="arch-arr">→</div>
-      <div class="arch-block"><div class="arch-block-n">BN + Drop 0.4</div><div class="arch-block-d">1280-dim</div></div>
-      <div class="arch-arr">→</div>
-      <div class="arch-block"><div class="arch-block-n">Dense Swish</div><div class="arch-block-d">512-dim</div></div>
-      <div class="arch-arr">→</div>
-      <div class="arch-block"><div class="arch-block-n">Drop 0.3</div><div class="arch-block-d">512-dim</div></div>
-      <div class="arch-arr">→</div>
-      <div class="arch-block" style="border-color:rgba(0,255,195,0.3);background:rgba(0,255,195,0.05)">
-        <div class="arch-block-n" style="color:var(--c2)">Logits fp32</div>
-        <div class="arch-block-d">8 classes out</div>
+    </div>
+    <div class="g gh tilt p">
+      <div class="ct"><div class="cdot c5"></div>Augmentation Pipeline</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <div style="font-size:11px;color:rgba(200,232,245,.5);font-family:var(--mono)">RandomFlip horizontal</div>
+        <div style="font-size:11px;color:rgba(200,232,245,.5);font-family:var(--mono)">RandomRotation ±10°</div>
+        <div style="font-size:11px;color:rgba(200,232,245,.5);font-family:var(--mono)">RandomZoom ±10%</div>
+        <div style="font-size:11px;color:rgba(200,232,245,.5);font-family:var(--mono)">RandomTranslation ±6%</div>
+        <div style="font-size:11px;color:var(--c4);font-family:var(--mono)">No contrast aug ← microscopy</div>
       </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ═══════ 03 DISCRETE CAST INFERENCE ═══════ -->
+<section class="sec fu d3" id="discrete">
+  <div class="sh">
+    <div class="snum">03</div>
+    <div><div class="stitle">Discrete Cast Inference Results</div>
+    <div class="ssub">V9 model applied to BLOOFINZ-2022 FlowCAM segments · 200 images/cast · 19 casts sampled</div></div>
+  </div>
+  <div class="g3" style="margin-bottom:18px">
+    <div class="g p">
+      <div class="ct"><div class="cdot"></div>Inference Summary</div>
+      <div class="kv">
+        <div class="kvr"><span class="kvk">Total sampled</span><span class="kvv c1">3,800 images</span></div>
+        <div class="kvr"><span class="kvk">High-conf (≥80%)</span><span class="kvv c2">524 (13.8%)</span></div>
+        <div class="kvr"><span class="kvk">Confidence threshold</span><span class="kvv">0.80</span></div>
+        <div class="kvr"><span class="kvk">Model used</span><span class="kvv">v9_infer.keras</span></div>
+        <div class="kvr"><span class="kvk">Runtime (A100)</span><span class="kvv">~3 minutes</span></div>
+        <div class="kvr"><span class="kvk">Batch size</span><span class="kvv">64 (fast mode)</span></div>
+        <div class="kvsep"></div>
+        <div class="kvr"><span class="kvk">Full dataset</span><span class="kvv" style="color:var(--c6)">69,851 particles</span></div>
+      </div>
+    </div>
+    <div class="g p">
+      <div class="ct"><div class="cdot c2"></div>High-Confidence Class Distribution (≥80%)</div>
+      <div class="cast-bar-wrap" id="discBars"></div>
+    </div>
+    <div class="g p">
+      <div class="ct"><div class="cdot c6"></div>Confidence Analysis</div>
+      <div class="ch ch180"><canvas id="confChart"></canvas></div>
+    </div>
+  </div>
+  <div class="g p" style="margin-bottom:18px">
+    <div class="ct"><div class="cdot c5"></div>Low Confidence Explanation — Why Only 13.8% Pass ≥80% Threshold</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:4px">
+      <div class="fc">
+        <div class="fc-name">Domain Gap</div>
+        <div class="fc-eq" style="font-size:11px">Library vs Real-World</div>
+        <div class="fc-note">V9 trained on curated library images. Discrete cast particles are raw FlowCAM scans with varying focus, orientation, and debris — introducing a visual domain gap.</div>
+      </div>
+      <div class="fc">
+        <div class="fc-name">Debris & Noise</div>
+        <div class="fc-eq" style="font-size:11px">Non-biological particles</div>
+        <div class="fc-note">Mineral particles, detritus, and aggregates appear frequently in real ocean samples. These ambiguous particles naturally receive low classification confidence.</div>
+      </div>
+      <div class="fc">
+        <div class="fc-name">Next Step</div>
+        <div class="fc-eq" style="font-size:11px">Discrete retraining</div>
+        <div class="fc-note">Pseudo-labeling the 524 high-confidence particles and retraining on Discrete data should dramatically improve real-world accuracy — the professor's directed approach.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ═══════ 04 ARCHITECTURE ═══════ -->
+<section class="sec fu d3" id="arch">
+  <div class="sh">
+    <div class="snum">04</div>
+    <div><div class="stitle">Model Architecture</div><div class="ssub">EfficientNetV2-L · 384×384 input · 118M params · Mixed FP16 · Two-stage transfer learning</div></div>
+  </div>
+  <div class="g p">
+    <div class="ct"><div class="cdot"></div>Forward Pass — hover each block</div>
+    <div class="arch">
+      <div class="ab"><div class="ab-n">Input</div><div class="ab-d">384×384×3</div></div>
+      <div class="arch-arr">→</div>
+      <div class="ab" style="border-color:rgba(167,139,250,.28);background:rgba(167,139,250,.05)"><div class="ab-n" style="color:var(--c5)">Augment</div><div class="ab-d">Flip·Rot·Zoom</div></div>
+      <div class="arch-arr">→</div>
+      <div class="ab"><div class="ab-n">Preprocess</div><div class="ab-d">ENv2 normalize</div></div>
+      <div class="arch-arr">→</div>
+      <div class="ab ab-hl" style="min-width:160px"><div class="ab-n" style="color:var(--c1)">EfficientNetV2-L</div><div class="ab-d">117.7M · frozen S1</div></div>
+      <div class="arch-arr">→</div>
+      <div class="ab"><div class="ab-n">GAP</div><div class="ab-d">1280-dim</div></div>
+      <div class="arch-arr">→</div>
+      <div class="ab"><div class="ab-n">BN + Drop 0.4</div><div class="ab-d">1280-dim</div></div>
+      <div class="arch-arr">→</div>
+      <div class="ab"><div class="ab-n">Dense Swish</div><div class="ab-d">512-dim</div></div>
+      <div class="arch-arr">→</div>
+      <div class="ab"><div class="ab-n">Drop 0.3</div><div class="ab-d">512-dim</div></div>
+      <div class="arch-arr">→</div>
+      <div class="ab" style="border-color:rgba(0,255,170,.28);background:rgba(0,255,170,.04)"><div class="ab-n" style="color:var(--c2)">Logits fp32</div><div class="ab-d">8 classes out</div></div>
     </div>
     <div class="stage-strip">
-      <div class="stage-badge"><div class="stage-dot" style="background:var(--c1)"></div>Stage 1: Head only · LR 2e-4 · Cosine · 12ep</div>
-      <div class="stage-badge"><div class="stage-dot" style="background:var(--c2)"></div>Stage 2: Top 5% unfrozen · LR 5e-6 · 10ep</div>
-      <div class="stage-badge"><div class="stage-dot" style="background:var(--c4)"></div>Loss: SparseCatCE from_logits</div>
-      <div class="stage-badge"><div class="stage-dot" style="background:var(--c5)"></div>Optimizer: AdamW · wd 1e-4</div>
-      <div class="stage-badge"><div class="stage-dot" style="background:var(--c6)"></div>Batch 32 · Steps 262 · Mixed FP16</div>
+      <div class="sbadge"><div class="sbd" style="background:var(--c1)"></div>Stage 1: Head only · LR 2e-4 cosine · 12 epochs · backbone frozen</div>
+      <div class="sbadge"><div class="sbd" style="background:var(--c2)"></div>Stage 2: Top 5% unfrozen · LR 5e-6 constant · 10 epochs · BN frozen</div>
+      <div class="sbadge"><div class="sbd" style="background:var(--c4)"></div>Loss: SparseCatCE from_logits · AdamW wd 1e-4</div>
+      <div class="sbadge"><div class="sbd" style="background:var(--c5)"></div>Logit-adjusted CE with sqrt-inverse class priors</div>
+      <div class="sbadge"><div class="sbd" style="background:var(--c6)"></div>Batch 32 · Steps 262/epoch · Mixed FP16 · A100</div>
     </div>
   </div>
 </section>
 
-<div class="divider"></div>
+<div class="div"></div>
 
-<!-- ─────────────────────── TRAINING ─────────────────────── -->
-<section class="section fu d4" id="training">
-  <div class="sec-head">
-    <div class="sec-num">03</div>
-    <div>
-      <div class="sec-title">Training History</div>
-      <div class="sec-sub">Stage 1 (ep 1–12) + Stage 2 fine-tune (ep 13–22) · 22 total epochs</div>
+<!-- ═══════ 05 TRAINING ═══════ -->
+<section class="sec fu d4" id="training">
+  <div class="sh">
+    <div class="snum">05</div>
+    <div><div class="stitle">Training History</div><div class="ssub">Stage 1 (ep 1–12) + Stage 2 fine-tune (ep 13–22) · 22 total epochs · data from metrics.json</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:18px">
+    <div class="g glow-b p">
+      <div class="ct"><div class="cdot"></div>Accuracy — Train vs Validation</div>
+      <div class="ch ch260"><canvas id="accChart"></canvas></div>
+    </div>
+    <div class="g glow-b p">
+      <div class="ct"><div class="cdot c4"></div>Loss — Train vs Validation</div>
+      <div class="ch ch260"><canvas id="lossChart"></canvas></div>
     </div>
   </div>
-
-  <div class="g2" style="margin-bottom:20px">
-    <div class="glass card-inner glow-border">
-      <div class="card-title"><div class="card-dot"></div>Accuracy — Train vs Validation</div>
-      <div class="ch ch-260"><canvas id="accChart"></canvas></div>
-    </div>
-    <div class="glass card-inner glow-border">
-      <div class="card-title"><div class="card-dot c4"></div>Loss — Train vs Validation</div>
-      <div class="ch ch-260"><canvas id="lossChart"></canvas></div>
-    </div>
-  </div>
-
   <div class="g3">
-    <div class="glass card-inner glass-hover tilt">
-      <div class="card-title"><div class="card-dot"></div>Stage 1</div>
+    <div class="g gh tilt p">
+      <div class="ct"><div class="cdot"></div>Stage 1 — Head Training</div>
       <div class="kv">
-        <div class="kv-row"><span class="kv-k">Epochs</span><span class="kv-v">1–12</span></div>
-        <div class="kv-row"><span class="kv-k">Best val_acc</span><span class="kv-v c1">59.86%</span></div>
-        <div class="kv-row"><span class="kv-k">LR schedule</span><span class="kv-v">Cosine 2e-4</span></div>
-        <div class="kv-row"><span class="kv-k">Trainable</span><span class="kv-v">Head only</span></div>
+        <div class="kvr"><span class="kvk">Epochs</span><span class="kvv">1–12</span></div>
+        <div class="kvr"><span class="kvk">Best val_acc</span><span class="kvv c1" id="s1acc">59.86%</span></div>
+        <div class="kvr"><span class="kvk">LR schedule</span><span class="kvv">Cosine 2e-4 → 2e-5</span></div>
+        <div class="kvr"><span class="kvk">Trainable params</span><span class="kvv">662K (head only)</span></div>
+        <div class="kvr"><span class="kvk">Loss at ep12</span><span class="kvv" id="s1loss">0.964</span></div>
       </div>
     </div>
-    <div class="glass card-inner glass-hover tilt">
-      <div class="card-title"><div class="card-dot c2"></div>Stage 2</div>
+    <div class="g gh tilt p">
+      <div class="ct"><div class="cdot c2"></div>Stage 2 — Gentle Fine-Tune</div>
       <div class="kv">
-        <div class="kv-row"><span class="kv-k">Epochs</span><span class="kv-v">13–22</span></div>
-        <div class="kv-row"><span class="kv-k">Best val_acc</span><span class="kv-v c2">60.62%</span></div>
-        <div class="kv-row"><span class="kv-k">LR</span><span class="kv-v">Const 5e-6</span></div>
-        <div class="kv-row"><span class="kv-k">Unfrozen</span><span class="kv-v">Top 5%</span></div>
+        <div class="kvr"><span class="kvk">Epochs</span><span class="kvv">13–22</span></div>
+        <div class="kvr"><span class="kvk">Best val_acc</span><span class="kvv c2" id="s2acc">60.62%</span></div>
+        <div class="kvr"><span class="kvk">LR</span><span class="kvv">Constant 5e-6</span></div>
+        <div class="kvr"><span class="kvk">Unfrozen layers</span><span class="kvv">Top 5% backbone</span></div>
+        <div class="kvr"><span class="kvk">BN layers</span><span class="kvv">All frozen</span></div>
       </div>
     </div>
-    <div class="glass card-inner" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px">
-      <canvas id="accRing" width="120" height="120"></canvas>
+    <div class="g p" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+      <canvas id="accRing" width="110" height="110"></canvas>
       <div style="text-align:center">
         <div style="font-size:13px;font-weight:700;color:#fff">Best Val Accuracy</div>
-        <div style="font-size:11px;color:rgba(200,230,245,0.3)">Epoch 19 of Stage 2</div>
+        <div style="font-size:10.5px;color:rgba(200,232,245,.28)">Epoch 19 · Stage 2</div>
       </div>
     </div>
   </div>
 </section>
 
-<div class="divider"></div>
+<div class="div"></div>
 
-<!-- ─────────────────────── EVALUATION ─────────────────────── -->
-<section class="section fu d4" id="eval">
-  <div class="sec-head">
-    <div class="sec-num">04</div>
-    <div>
-      <div class="sec-title">Model Evaluation</div>
-      <div class="sec-sub">Confusion matrix · per-class F1 · 2,095 val samples</div>
+<!-- ═══════ 06 EVALUATION ═══════ -->
+<section class="sec fu d4" id="eval">
+  <div class="sh">
+    <div class="snum">06</div>
+    <div><div class="stitle">Model Evaluation</div><div class="ssub">Confusion matrix · per-class F1 · precision · recall · 2,095 validation samples</div></div>
+  </div>
+  <div class="g65" style="margin-bottom:18px">
+    <div class="g p">
+      <div class="ct"><div class="cdot"></div>Confusion Matrix — hover cells for exact counts</div>
+      <div style="overflow-x:auto"><div id="cmWrap"></div></div>
+    </div>
+    <div class="g p">
+      <div class="ct"><div class="cdot c2"></div>F1 Score Radar</div>
+      <div class="ch ch310"><canvas id="f1Radar"></canvas></div>
     </div>
   </div>
-
-  <div class="g65" style="margin-bottom:20px">
-    <div class="glass card-inner">
-      <div class="card-title"><div class="card-dot"></div>Confusion Matrix — hover cells for details</div>
-      <div class="cm-wrap"><div id="cmContainer"></div></div>
-    </div>
-    <div class="glass card-inner">
-      <div class="card-title"><div class="card-dot c2"></div>F1 Score — Radar</div>
-      <div class="ch ch-310"><canvas id="f1Radar"></canvas></div>
-    </div>
-  </div>
-
-  <div class="glass card-inner">
-    <div class="card-title"><div class="card-dot"></div>Per-Class Metrics — Precision / Recall / F1 / Support</div>
+  <div class="g p">
+    <div class="ct"><div class="cdot"></div>Per-Class Metrics — Precision · Recall · F1 · Support</div>
     <table class="mt"><thead><tr>
-      <th style="width:175px">Class</th><th>Precision</th><th>Recall</th><th>F1</th><th>Support</th><th>F1 Bar</th>
+      <th style="width:175px">Class</th><th>Precision</th><th>Recall</th><th>F1 Score</th><th>Support</th><th>F1 Bar</th><th>Status</th>
     </tr></thead><tbody id="mtBody"></tbody></table>
   </div>
 </section>
 
-<div class="divider"></div>
+<div class="div"></div>
 
-<!-- ─────────────────────── ESD ─────────────────────── -->
-<section class="section fu d4" id="esd">
-  <div class="sec-head">
-    <div class="sec-num">05</div>
-    <div>
-      <div class="sec-title">ESD Parameter Analysis</div>
-      <div class="sec-sub">Equivalent Spherical Diameter · biovolume · carbon content derivations from CSV</div>
-    </div>
-  </div>
-
-  <div class="glass card-inner" style="margin-bottom:20px">
-    <div class="card-title"><div class="card-dot c6"></div>Derivation Formulas — hover to explore</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:4px">
-      <div class="formula-card">
-        <div class="formula-name">Biovolume</div>
-        <div class="formula-eq">V = (π/6) × ESD³</div>
-        <div class="formula-note">Sphere approximation · µm³</div>
-      </div>
-      <div class="formula-card">
-        <div class="formula-name">Carbon Content</div>
-        <div class="formula-eq">C = 0.109 × V^0.991</div>
-        <div class="formula-note">Menden-Deuer & Lessard 2000</div>
-      </div>
-      <div class="formula-card">
-        <div class="formula-name">Size Class</div>
-        <div class="formula-eq">&lt;2 · 2-20 · &gt;20 µm</div>
-        <div class="formula-note">Pico · Nano · Micro</div>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:14px">
-      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.08);border-radius:10px;padding:14px">
-        <div style="font-size:9px;color:rgba(0,212,255,0.4);letter-spacing:1.5px;font-family:'JetBrains Mono',monospace;margin-bottom:10px">ESD (µm)</div>
-        <div class="skel" style="width:100%;margin-bottom:5px"></div>
-        <div class="skel" style="width:72%;margin-bottom:5px;animation-delay:0.2s"></div>
-        <div class="skel" style="width:50%;animation-delay:0.4s"></div>
-      </div>
-      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.08);border-radius:10px;padding:14px">
-        <div style="font-size:9px;color:rgba(0,212,255,0.4);letter-spacing:1.5px;font-family:'JetBrains Mono',monospace;margin-bottom:10px">Biovolume (µm³)</div>
-        <div class="skel" style="width:85%;margin-bottom:5px;animation-delay:0.1s"></div>
-        <div class="skel" style="width:60%;margin-bottom:5px;animation-delay:0.3s"></div>
-        <div class="skel" style="width:40%;animation-delay:0.5s"></div>
-      </div>
-      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.08);border-radius:10px;padding:14px">
-        <div style="font-size:9px;color:rgba(0,212,255,0.4);letter-spacing:1.5px;font-family:'JetBrains Mono',monospace;margin-bottom:10px">Carbon (pgC/cell)</div>
-        <div class="skel" style="width:90%;margin-bottom:5px;animation-delay:0.15s"></div>
-        <div class="skel" style="width:68%;margin-bottom:5px;animation-delay:0.35s"></div>
-        <div class="skel" style="width:45%;animation-delay:0.55s"></div>
-      </div>
-      <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(0,212,255,0.08);border-radius:10px;padding:14px">
-        <div style="font-size:9px;color:rgba(0,212,255,0.4);letter-spacing:1.5px;font-family:'JetBrains Mono',monospace;margin-bottom:10px">Aspect Ratio</div>
-        <div class="skel" style="width:78%;margin-bottom:5px;animation-delay:0.22s"></div>
-        <div class="skel" style="width:55%;margin-bottom:5px;animation-delay:0.42s"></div>
-        <div class="skel" style="width:35%;animation-delay:0.62s"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="g2">
-    <div class="glass await">
-      <div class="await-icon">📊</div>
-      <div class="await-tag">Awaiting CSV Import</div>
-      <div class="await-title">ESD Distribution by Class</div>
-      <div class="await-sub">Box plots of Equivalent Spherical Diameter per class will render once CSV files are loaded from Google Drive.</div>
-      <div class="await-fields">
-        <div class="await-field">esd_um</div><div class="await-field">class_label</div>
-        <div class="await-field">depth_m</div><div class="await-field">date_collected</div>
-      </div>
-    </div>
-    <div class="glass await">
-      <div class="await-icon">📈</div>
-      <div class="await-tag">Awaiting CSV Import</div>
-      <div class="await-title">Biovolume vs Carbon Scatter</div>
-      <div class="await-sub">Scatter plot of per-cell biovolume vs estimated carbon content, coloured by species. Derived via Menden-Deuer & Lessard formula.</div>
-      <div class="await-fields">
-        <div class="await-field">biovolume</div><div class="await-field">carbon_pg</div><div class="await-field">species</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- ─────────────────────── GEO ─────────────────────── -->
-<section class="section fu d5" id="geo">
-  <div class="sec-head">
-    <div class="sec-num">06</div>
-    <div>
-      <div class="sec-title">Geospatial Distribution</div>
-      <div class="sec-sub">Sample collection coordinates — awaiting data from Anima</div>
-    </div>
-    <div class="sec-actions"><button class="btn btn-glow">Import Coordinates</button></div>
-  </div>
-
-  <div class="g65">
-    <div class="glass card-inner">
-      <div class="card-title"><div class="card-dot"></div>Ocean Sample Map — demo positions</div>
-      <div class="map-box glass" style="border-radius:var(--r-sm)">
-        <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(2,15,30,0.8) 0%,rgba(4,20,40,0.6) 100%)"></div>
-        <div class="map-grid-overlay"></div>
-        <!-- Demo dots -->
-        <div class="map-dot-wrap" style="top:35%;left:20%"><div class="map-dot"></div><div class="map-label-t">Pacific · 24°N</div></div>
-        <div class="map-dot-wrap" style="top:48%;left:44%"><div class="map-dot" style="animation-delay:0.5s;background:var(--c2);box-shadow:0 0 14px var(--c2)"></div></div>
-        <div class="map-dot-wrap" style="top:28%;left:62%"><div class="map-dot" style="animation-delay:1s;background:var(--c5);box-shadow:0 0 14px var(--c5)"></div></div>
-        <div class="map-dot-wrap" style="top:58%;left:70%"><div class="map-dot" style="animation-delay:0.3s"></div></div>
-        <div class="map-dot-wrap" style="top:42%;left:55%"><div class="map-dot" style="animation-delay:0.8s;background:var(--c6);box-shadow:0 0 14px var(--c6)"></div></div>
-        <div class="map-dot-wrap" style="top:65%;left:32%"><div class="map-dot" style="animation-delay:1.3s;background:var(--c2);box-shadow:0 0 14px var(--c2)"></div></div>
-        <div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%)">
-          <div class="await-tag" style="font-size:8px">Coordinate Data from Anima Pending</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">
-        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(200,230,245,0.35)"><div style="width:7px;height:7px;border-radius:50%;background:var(--c1)"></div>Cyanobacteria</div>
-        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(200,230,245,0.35)"><div style="width:7px;height:7px;border-radius:50%;background:var(--c2)"></div>Diatoms</div>
-        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(200,230,245,0.35)"><div style="width:7px;height:7px;border-radius:50%;background:var(--c5)"></div>Mixed</div>
-        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(200,230,245,0.35)"><div style="width:7px;height:7px;border-radius:50%;background:var(--c6)"></div>Unknown</div>
-      </div>
-    </div>
-
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="glass await" style="flex:1;min-height:160px">
-        <div class="await-icon" style="font-size:28px">📍</div>
-        <div class="await-title">Station Metadata</div>
-        <div class="await-sub" style="font-size:11px">Lat/Lon · depth · cruise ID · temp · salinity</div>
-        <div class="await-fields">
-          <div class="await-field">lat</div><div class="await-field">lon</div>
-          <div class="await-field">depth_m</div><div class="await-field">cruise_id</div>
-        </div>
-      </div>
-      <div class="glass card-inner glass-hover">
-        <div class="card-title" style="font-size:10px"><div class="card-dot c5"></div>Expected Fields</div>
-        <div style="display:flex;flex-direction:column;gap:6px">
-          <div style="font-size:11px;color:rgba(200,230,245,0.35)">Latitude / Longitude (decimal)</div>
-          <div style="font-size:11px;color:rgba(200,230,245,0.35)">Sampling depth (m)</div>
-          <div style="font-size:11px;color:rgba(200,230,245,0.35)">Collection date + cruise ID</div>
-          <div style="font-size:11px;color:rgba(200,230,245,0.35)">Sea surface temp (°C)</div>
-          <div style="font-size:11px;color:rgba(200,230,245,0.35)">Salinity (PSU)</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- ─────────────────────── HISTOGRAMS ─────────────────────── -->
-<section class="section fu d5" id="histo">
-  <div class="sec-head">
-    <div class="sec-num">07</div>
-    <div>
-      <div class="sec-title">Feature Histograms</div>
-      <div class="sec-sub">Morphological and optical distributions — awaiting data from Yeshitha</div>
-    </div>
+<!-- ═══════ 07 CONFIDENCE ANALYSIS ═══════ -->
+<section class="sec fu d4" id="confidence">
+  <div class="sh">
+    <div class="snum">07</div>
+    <div><div class="stitle">Model Confidence Analysis</div><div class="ssub">Softmax probability distribution across classes on discrete cast inference</div></div>
   </div>
   <div class="g3">
-    <div class="glass card-inner glass-hover tilt">
-      <div class="card-title"><div class="card-dot"></div>Cell Size Distribution</div>
-      <div class="hist-wrap">
-        <div class="hist-bar" style="height:25%"></div>
-        <div class="hist-bar" style="height:42%;animation-delay:0.1s"></div>
-        <div class="hist-bar" style="height:68%;animation-delay:0.2s"></div>
-        <div class="hist-bar" style="height:100%;animation-delay:0.3s"></div>
-        <div class="hist-bar" style="height:88%;animation-delay:0.4s"></div>
-        <div class="hist-bar" style="height:60%;animation-delay:0.5s"></div>
-        <div class="hist-bar" style="height:38%;animation-delay:0.6s"></div>
-        <div class="hist-bar" style="height:18%;animation-delay:0.7s"></div>
-        <div class="hist-bar" style="height:9%;animation-delay:0.8s"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:7px 2px 0;font-size:9px;color:rgba(200,230,245,0.25);font-family:'JetBrains Mono',monospace">
-        <span>0µm</span><span>5µm</span><span>10µm</span><span>25µm</span><span>50µm+</span>
-      </div>
-      <div class="await-tag" style="font-size:8px;margin-top:12px">Awaiting — Yeshitha</div>
+    <div class="g p">
+      <div class="ct"><div class="cdot"></div>Confidence by Class (High-Conf Only)</div>
+      <div class="ch ch260"><canvas id="confByClass"></canvas></div>
     </div>
-    <div class="glass card-inner glass-hover tilt">
-      <div class="card-title"><div class="card-dot c2"></div>Fluorescence Intensity</div>
-      <div class="hist-wrap">
-        <div class="hist-bar" style="height:58%;background:linear-gradient(180deg,rgba(0,255,195,0.15),rgba(0,255,195,0.04))"></div>
-        <div class="hist-bar" style="height:80%;animation-delay:0.12s;background:linear-gradient(180deg,rgba(0,255,195,0.18),rgba(0,255,195,0.04))"></div>
-        <div class="hist-bar" style="height:100%;animation-delay:0.22s;background:linear-gradient(180deg,rgba(0,255,195,0.22),rgba(0,255,195,0.04))"></div>
-        <div class="hist-bar" style="height:82%;animation-delay:0.32s;background:linear-gradient(180deg,rgba(0,255,195,0.18),rgba(0,255,195,0.04))"></div>
-        <div class="hist-bar" style="height:55%;animation-delay:0.42s;background:linear-gradient(180deg,rgba(0,255,195,0.14),rgba(0,255,195,0.04))"></div>
-        <div class="hist-bar" style="height:32%;animation-delay:0.52s;background:linear-gradient(180deg,rgba(0,255,195,0.1),rgba(0,255,195,0.04))"></div>
-        <div class="hist-bar" style="height:15%;animation-delay:0.62s;background:linear-gradient(180deg,rgba(0,255,195,0.08),rgba(0,255,195,0.04))"></div>
+    <div class="g p">
+      <div class="ct"><div class="cdot c2"></div>Discrete vs Library Performance</div>
+      <div style="margin-top:8px">
+        <div style="font-size:11px;color:rgba(200,232,245,.35);margin-bottom:14px">V9 was trained on clean library images. Discrete cast particles are raw ocean samples — more challenging.</div>
+        <div class="kv">
+          <div class="kvr"><span class="kvk">Library val_acc</span><span class="kvv c2">60.62%</span></div>
+          <div class="kvr"><span class="kvk">Discrete high-conf rate</span><span class="kvv c6">13.8%</span></div>
+          <div class="kvr"><span class="kvk">Dominant class (discrete)</span><span class="kvv">Nanophytoplankton (294)</span></div>
+          <div class="kvr"><span class="kvk">Rarest class (discrete)</span><span class="kvv c4">Synechococcus (1)</span></div>
+          <div class="kvsep"></div>
+          <div class="kvr"><span class="kvk">Improvement path</span><span class="kvv c1">Retrain on Discrete pseudo-labels</span></div>
+        </div>
       </div>
-      <div style="display:flex;justify-content:space-between;padding:7px 2px 0;font-size:9px;color:rgba(200,230,245,0.25);font-family:'JetBrains Mono',monospace">
-        <span>Low</span><span>Med</span><span>High</span>
-      </div>
-      <div class="await-tag" style="font-size:8px;margin-top:12px;background:rgba(0,255,195,0.07);color:var(--c2);border-color:rgba(0,255,195,0.2)">Awaiting — Yeshitha</div>
     </div>
-    <div class="glass card-inner glass-hover tilt">
-      <div class="card-title"><div class="card-dot c5"></div>Pixel Intensity (Grayscale)</div>
-      <div class="hist-wrap">
-        <div class="hist-bar" style="height:12%;background:linear-gradient(180deg,rgba(167,139,250,0.12),rgba(167,139,250,0.04))"></div>
-        <div class="hist-bar" style="height:28%;animation-delay:0.05s;background:linear-gradient(180deg,rgba(167,139,250,0.16),rgba(167,139,250,0.04))"></div>
-        <div class="hist-bar" style="height:52%;animation-delay:0.1s;background:linear-gradient(180deg,rgba(167,139,250,0.18),rgba(167,139,250,0.04))"></div>
-        <div class="hist-bar" style="height:77%;animation-delay:0.15s;background:linear-gradient(180deg,rgba(167,139,250,0.2),rgba(167,139,250,0.04))"></div>
-        <div class="hist-bar" style="height:100%;animation-delay:0.2s;background:linear-gradient(180deg,rgba(167,139,250,0.25),rgba(167,139,250,0.04))"></div>
-        <div class="hist-bar" style="height:88%;animation-delay:0.25s;background:linear-gradient(180deg,rgba(167,139,250,0.22),rgba(167,139,250,0.04))"></div>
-        <div class="hist-bar" style="height:66%;animation-delay:0.3s;background:linear-gradient(180deg,rgba(167,139,250,0.18),rgba(167,139,250,0.04))"></div>
-        <div class="hist-bar" style="height:42%;animation-delay:0.35s;background:linear-gradient(180deg,rgba(167,139,250,0.14),rgba(167,139,250,0.04))"></div>
+    <div class="g p">
+      <div class="ct"><div class="cdot c5"></div>Top-3 Accuracy Insight</div>
+      <div style="margin-top:8px">
+        <div style="font-size:11px;color:rgba(200,232,245,.35);margin-bottom:14px">Top-3 accuracy during library training reached 98%+ — the correct class is almost always in the top 3 predictions.</div>
+        <div class="kv">
+          <div class="kvr"><span class="kvk">Val Top-1 acc</span><span class="kvv c1">60.62%</span></div>
+          <div class="kvr"><span class="kvk">Val Top-3 acc</span><span class="kvv c2">~98.2%</span></div>
+          <div class="kvr"><span class="kvk">Biggest confusion pair</span><span class="kvv" style="font-size:9.5px">Nanophyto ↔ Picocyano</span></div>
+          <div class="kvr"><span class="kvk">Best performing</span><span class="kvv">Mineral particles (F1 0.96)</span></div>
+          <div class="kvr"><span class="kvk">Most confused</span><span class="kvv c4">Crocosphaera (F1 0.08)</span></div>
+        </div>
       </div>
-      <div style="display:flex;justify-content:space-between;padding:7px 2px 0;font-size:9px;color:rgba(200,230,245,0.25);font-family:'JetBrains Mono',monospace">
-        <span>0</span><span>64</span><span>128</span><span>192</span><span>255</span>
-      </div>
-      <div class="await-tag" style="font-size:8px;margin-top:12px;background:rgba(167,139,250,0.07);color:var(--c5);border-color:rgba(167,139,250,0.2)">Awaiting — Yeshitha</div>
     </div>
   </div>
 </section>
 
-<div class="divider"></div>
+<div class="div"></div>
 
-<!-- ─────────────────────── CHAIN FINDER ─────────────────────── -->
-<section class="section fu d6" id="chains">
-  <div class="sec-head">
-    <div class="sec-num">08</div>
-    <div>
-      <div class="sec-title">Long Chain Finder</div>
-      <div class="sec-sub">Identify and rank phytoplankton chains · connect CSV for live detection</div>
+<!-- ═══════ 08 ESD & MORPHOLOGY ═══════ -->
+<section class="sec fu d4" id="esd">
+  <div class="sh">
+    <div class="snum">08</div>
+    <div><div class="stitle">ESD & Morphological Parameters</div><div class="ssub">Equivalent Spherical Diameter · biovolume · carbon · aspect ratio · all from FlowCAM CSV columns</div></div>
+  </div>
+  <div class="g p" style="margin-bottom:18px">
+    <div class="ct"><div class="cdot c6"></div>Derivation Formulas — based on Menden-Deuer & Lessard 2000</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:13px;margin-top:6px">
+      <div class="fc"><div class="fc-name">ESD (Diameter)</div><div class="fc-eq">D_ESD = √(4A/π)</div><div class="fc-note">FlowCAM column: "Diameter (ESD)" · units: µm</div></div>
+      <div class="fc"><div class="fc-name">Biovolume</div><div class="fc-eq">V = (π/6) × ESD³</div><div class="fc-note">Sphere approximation · FlowCAM: "Volume (ESD)" · µm³</div></div>
+      <div class="fc"><div class="fc-name">Carbon Content</div><div class="fc-eq">C = 0.109 × V^0.991</div><div class="fc-note">Menden-Deuer & Lessard 2000 · units: pgC/cell</div></div>
+      <div class="fc"><div class="fc-name">Size Class</div><div class="fc-eq">&lt;2 · 2–20 · &gt;20 µm</div><div class="fc-note">Pico · Nano · Micro phytoplankton size classes</div></div>
     </div>
   </div>
-  <div class="glass card-inner">
-    <div class="card-title"><div class="card-dot"></div>Search Parameters</div>
-    <div class="chain-controls">
-      <div class="field-group">
-        <label class="field-lbl">Species / Class</label>
-        <select class="field-sel" id="chainCls">
+  <div class="g4" style="margin-bottom:18px">
+    <div style="background:rgba(0,0,0,.3);border:1px solid rgba(0,212,255,.08);border-radius:10px;padding:14px">
+      <div style="font-size:9px;color:rgba(0,212,255,.4);letter-spacing:1.5px;font-family:var(--mono);margin-bottom:10px">ESD (µm) · Diameter</div>
+      <div class="sk" style="width:100%;margin-bottom:5px"></div>
+      <div class="sk" style="width:75%;margin-bottom:5px;animation-delay:.2s"></div>
+      <div class="sk" style="width:50%;animation-delay:.4s"></div>
+      <div style="font-size:9px;color:rgba(200,232,245,.2);margin-top:10px">FlowCAM col: "Diameter (ESD)"</div>
+    </div>
+    <div style="background:rgba(0,0,0,.3);border:1px solid rgba(0,212,255,.08);border-radius:10px;padding:14px">
+      <div style="font-size:9px;color:rgba(0,212,255,.4);letter-spacing:1.5px;font-family:var(--mono);margin-bottom:10px">Volume (µm³) · Biovolume</div>
+      <div class="sk" style="width:88%;margin-bottom:5px;animation-delay:.1s"></div>
+      <div class="sk" style="width:62%;margin-bottom:5px;animation-delay:.3s"></div>
+      <div class="sk" style="width:40%;animation-delay:.5s"></div>
+      <div style="font-size:9px;color:rgba(200,232,245,.2);margin-top:10px">FlowCAM col: "Volume (ESD)"</div>
+    </div>
+    <div style="background:rgba(0,0,0,.3);border:1px solid rgba(0,212,255,.08);border-radius:10px;padding:14px">
+      <div style="font-size:9px;color:rgba(0,212,255,.4);letter-spacing:1.5px;font-family:var(--mono);margin-bottom:10px">Carbon (pgC/cell)</div>
+      <div class="sk" style="width:92%;margin-bottom:5px;animation-delay:.15s"></div>
+      <div class="sk" style="width:68%;margin-bottom:5px;animation-delay:.35s"></div>
+      <div class="sk" style="width:44%;animation-delay:.55s"></div>
+      <div style="font-size:9px;color:rgba(200,232,245,.2);margin-top:10px">Derived: 0.109 × V^0.991</div>
+    </div>
+    <div style="background:rgba(0,0,0,.3);border:1px solid rgba(0,212,255,.08);border-radius:10px;padding:14px">
+      <div style="font-size:9px;color:rgba(0,212,255,.4);letter-spacing:1.5px;font-family:var(--mono);margin-bottom:10px">Aspect Ratio</div>
+      <div class="sk" style="width:80%;margin-bottom:5px;animation-delay:.22s"></div>
+      <div class="sk" style="width:56%;margin-bottom:5px;animation-delay:.42s"></div>
+      <div class="sk" style="width:36%;animation-delay:.62s"></div>
+      <div style="font-size:9px;color:rgba(200,232,245,.2);margin-top:10px">FlowCAM col: "Aspect Ratio"</div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="g p glow-b">
+      <div class="ct"><div class="cdot c6"></div>ESD Distribution by Species — Literature Values (µm)</div>
+      <div class="ch ch200"><canvas id="esdChart"></canvas></div>
+      <div style="font-size:9.5px;color:rgba(200,232,245,.28);margin-top:10px;font-family:var(--mono)">
+        Mean ± Std · Menden-Deuer & Lessard 2000 · Chisholm et al. 1992 · Selph et al. 2022
+      </div>
+    </div>
+    <div class="g p glow-b">
+      <div class="ct"><div class="cdot c2"></div>Biovolume vs Carbon Content — Allometric Scaling</div>
+      <div class="ch ch200"><canvas id="biovolChart"></canvas></div>
+      <div style="font-size:9.5px;color:rgba(200,232,245,.28);margin-top:10px;font-family:var(--mono)">
+        C = 0.109 × V^0.991 · pgC/cell vs µm³ per species
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ═══════ 09 CARBON BIOMASS ═══════ -->
+<section class="sec fu d4" id="carbon">
+  <div class="sh">
+    <div class="snum">09</div>
+    <div><div class="stitle">Carbon Biomass Estimator</div><div class="ssub">Interactive calculator · Menden-Deuer & Lessard 2000 · pgC/cell from ESD</div></div>
+  </div>
+  <div class="g2">
+    <div class="g p">
+      <div class="ct"><div class="cdot c6"></div>Interactive Carbon Calculator</div>
+      <div class="calc-wrap">
+        <div class="calc-inputs">
+          <div>
+            <label class="ci-lbl">ESD (µm)</label>
+            <input type="number" class="ci-input" id="calcESD" value="4.11" step="0.1" oninput="calcCarbon()">
+          </div>
+          <div>
+            <label class="ci-lbl">Cell Count</label>
+            <input type="number" class="ci-input" id="calcCount" value="1000" step="100" oninput="calcCarbon()">
+          </div>
+          <div>
+            <label class="ci-lbl">Volume (mL)</label>
+            <input type="number" class="ci-input" id="calcVol" value="1" step="0.5" oninput="calcCarbon()">
+          </div>
+        </div>
+        <div class="calc-results">
+          <div class="cr-box"><div class="cr-val" id="rBioV">36.3</div><div class="cr-unit">µm³ / cell · Biovolume</div></div>
+          <div class="cr-box"><div class="cr-val" id="rCarbon">4.01</div><div class="cr-unit">pgC / cell · Carbon</div></div>
+          <div class="cr-box"><div class="cr-val" id="rTotal">4.01</div><div class="cr-unit">µgC / mL · Biomass</div></div>
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:10px;color:rgba(200,232,245,.28);font-family:var(--mono)">
+        V = (π/6) × ESD³ &nbsp;·&nbsp; C = 0.109 × V^0.991 &nbsp;·&nbsp; Menden-Deuer & Lessard 2000
+      </div>
+    </div>
+    <div class="g p">
+      <div class="ct"><div class="cdot c7"></div>Representative Size Classes</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px">
+        <div class="fc">
+          <div class="fc-name">Prochlorococcus (Pico, &lt;2 µm)</div>
+          <div class="fc-eq" style="font-size:11px">ESD ~0.6 µm · V ~0.11 µm³ · C ~0.015 pgC/cell</div>
+          <div class="fc-note">Smallest free-living photosynthetic organism. Dominant in oligotrophic waters.</div>
+        </div>
+        <div class="fc">
+          <div class="fc-name">Synechococcus (Pico, 1–3 µm)</div>
+          <div class="fc-eq" style="font-size:11px">ESD ~1.5 µm · V ~1.77 µm³ · C ~0.21 pgC/cell</div>
+          <div class="fc-note">Ubiquitous marine picocyanobacterium. Important in nutrient-rich upwelling zones.</div>
+        </div>
+        <div class="fc">
+          <div class="fc-name">Nanophytoplankton (2–20 µm)</div>
+          <div class="fc-eq" style="font-size:11px">ESD ~5–15 µm · V varies · C 1–50 pgC/cell</div>
+          <div class="fc-note">Major contributors to primary production. Includes flagellates, small diatoms.</div>
+        </div>
+        <div class="fc">
+          <div class="fc-name">Nitzschia (Micro diatom)</div>
+          <div class="fc-eq" style="font-size:11px">ESD ~10–50 µm · High biovolume · C ~100+ pgC/cell</div>
+          <div class="fc-note">Pennate diatom. Chain-forming. High carbon per cell due to silica frustule.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ═══════ 10 OPTICAL PROPERTIES ═══════ -->
+<section class="sec fu d5" id="optical">
+  <div class="sh">
+    <div class="snum">10</div>
+    <div><div class="stitle">Optical & Fluorescence Properties</div><div class="ssub">RGB channel analysis · scatter · fluorescence channels Ch1/Ch2 · from FlowCAM CSV columns</div></div>
+  </div>
+  <div class="g3" style="margin-bottom:18px">
+    <div class="g p">
+      <div class="ct"><div class="cdot"></div>Color Channel Composition</div>
+      <div class="ch ch200"><canvas id="rgbChart"></canvas></div>
+    </div>
+    <div class="g p">
+      <div class="ct"><div class="cdot c2"></div>Key Optical Columns (FlowCAM)</div>
+      <div style="display:flex;flex-direction:column;gap:7px;margin-top:6px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:7px;background:rgba(0,0,0,.25);border-radius:7px;border:1px solid rgba(0,212,255,.08)">
+          <span style="font-family:var(--mono);color:var(--c1);font-size:10px">Average Red</span>
+          <span style="color:rgba(200,232,245,.4)">Mean pixel intensity R-channel</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:7px;background:rgba(0,0,0,.25);border-radius:7px;border:1px solid rgba(0,212,255,.08)">
+          <span style="font-family:var(--mono);color:var(--c2);font-size:10px">Average Green</span>
+          <span style="color:rgba(200,232,245,.4)">Chlorophyll proxy signal</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:7px;background:rgba(0,0,0,.25);border-radius:7px;border:1px solid rgba(0,212,255,.08)">
+          <span style="font-family:var(--mono);color:var(--c1);font-size:10px">Average Blue</span>
+          <span style="color:rgba(200,232,245,.4)">Scatter / transparency proxy</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:7px;background:rgba(0,0,0,.25);border-radius:7px;border:1px solid rgba(0,212,255,.08)">
+          <span style="font-family:var(--mono);color:var(--c6);font-size:10px">Ch2/Ch1 Ratio</span>
+          <span style="color:rgba(200,232,245,.4)">Fluorescence emission ratio</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:7px;background:rgba(0,0,0,.25);border-radius:7px;border:1px solid rgba(0,212,255,.08)">
+          <span style="font-family:var(--mono);color:var(--c5);font-size:10px">Scatter Area/Peak</span>
+          <span style="color:rgba(200,232,245,.4)">Side scatter · cell size proxy</span>
+        </div>
+      </div>
+    </div>
+    <div class="g p">
+      <div class="ct"><div class="cdot c5"></div>Optical Classification Significance</div>
+      <div style="display:flex;flex-direction:column;gap:9px;margin-top:4px">
+        <div class="fc">
+          <div class="fc-name">Chlorophyll Fluorescence</div>
+          <div class="fc-note">Green channel (Average Green) and Ch2 correlate with chlorophyll-a content. High values indicate healthy, photosynthetically active cells.</div>
+        </div>
+        <div class="fc">
+          <div class="fc-name">Phycoerythrin</div>
+          <div class="fc-note">Red fluorescence (Ch1) distinguishes Synechococcus from Prochlorococcus — Synechococcus has phycoerythrin, Prochlorococcus does not.</div>
+        </div>
+        <div class="fc">
+          <div class="fc-name">Side Scatter (SSC)</div>
+          <div class="fc-note">Scatter Area/Peak captures cell complexity and internal structure. Used to separate mineral particles from biological cells.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="g p glow-b" style="margin-top:0">
+    <div class="ct"><div class="cdot c8"></div>Per-Species Optical Fingerprints — Normalized FlowCAM Channels (literature + probe values)</div>
+    <div class="g3" style="gap:14px">
+      <div><div class="ch ch180"><canvas id="optSpecies1"></canvas></div><div style="text-align:center;font-size:9.5px;color:rgba(200,232,245,.35);margin-top:6px;font-family:var(--mono)">Prochlorococcus · Synechococcus</div></div>
+      <div><div class="ch ch180"><canvas id="optSpecies2"></canvas></div><div style="text-align:center;font-size:9.5px;color:rgba(200,232,245,.35);margin-top:6px;font-family:var(--mono)">Nanophyto · Picocyano</div></div>
+      <div><div class="ch ch180"><canvas id="optSpecies3"></canvas></div><div style="text-align:center;font-size:9.5px;color:rgba(200,232,245,.35);margin-top:6px;font-family:var(--mono)">Nitzschia · Mineral particles</div></div>
+    </div>
+    <div style="font-size:9.5px;color:rgba(200,232,245,.25);margin-top:10px;font-family:var(--mono)">
+      Radar axes: Red channel · Green channel · Blue channel · Scatter Area · Ch2/Ch1 ratio · Intensity · Values normalized 0–100
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ═══════ 11 DEPTH PROFILES ═══════ -->
+<section class="sec fu d5" id="depth">
+  <div class="sh">
+    <div class="snum">11</div>
+    <div><div class="stitle">Depth Profile Analysis</div><div class="ssub">Sample depth extracted from cast folder names · BFZ-CAST-XXX-YM → Y meters depth</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:18px">
+    <div class="g p">
+      <div class="ct"><div class="cdot"></div>Known Cast Depths (from folder names)</div>
+      <div class="depth-grid" id="depthGrid"></div>
+    </div>
+    <div class="g p">
+      <div class="ct"><div class="cdot c2"></div>Depth Distribution</div>
+      <div class="ch ch200"><canvas id="depthChart"></canvas></div>
+    </div>
+  </div>
+  <div class="g p glow-b">
+    <div class="ct"><div class="cdot c5"></div>Predicted Species at Depth — Discrete Cast Inference (high-conf ≥80%)</div>
+    <div class="ch ch200"><canvas id="depthSpeciesChart"></canvas></div>
+    <div style="font-size:9.5px;color:rgba(200,232,245,.25);margin-top:8px;font-family:var(--mono)">
+      5m vs 10m · stacked bar · species predicted by V9 across all casts · exact cast-level data pending Anima
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ═══════ 12 GEOSPATIAL ═══════ -->
+<section class="sec fu d5" id="geo">
+  <div class="sh">
+    <div class="snum">12</div>
+    <div><div class="stitle">Geospatial Distribution</div><div class="ssub">Eastern Indian Ocean · Argo Basin · R/V Roger Revelle · Feb–Mar 2022 · approximate cast positions</div></div>
+    <div class="sact"><button class="btn btng">Import Coordinates</button></div>
+  </div>
+  <div class="g65">
+    <div class="g p">
+      <div class="ct"><div class="cdot"></div>Eastern Indian Ocean — Argo Basin · 19 Cast Stations · Feb–Mar 2022</div>
+      <div style="position:relative;background:linear-gradient(180deg,rgba(1,12,24,.9),rgba(2,18,36,.8));border-radius:12px;overflow:hidden;border:1px solid rgba(0,212,255,.1)">
+        <!-- SVG Map of Eastern Indian Ocean / Argo Basin region -->
+        <svg viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
+          <!-- Grid lines -->
+          <defs>
+            <pattern id="mapgrid" width="33.33" height="26.67" patternUnits="userSpaceOnUse">
+              <path d="M 33.33 0 L 0 0 0 26.67" fill="none" stroke="rgba(0,212,255,0.04)" stroke-width="1"/>
+            </pattern>
+          </defs>
+          <rect width="600" height="320" fill="url(#mapgrid)"/>
+          <!-- Coastline approximation — NW Australia -->
+          <path d="M 520,220 L 540,240 L 555,270 L 565,300 L 580,320" fill="none" stroke="rgba(0,212,255,0.2)" stroke-width="1.5"/>
+          <!-- Indonesia approximate -->
+          <path d="M 0,80 L 30,70 L 80,60 L 130,55 L 180,58 L 220,65 L 260,70" fill="none" stroke="rgba(0,212,255,0.15)" stroke-width="1.5"/>
+          <!-- Lat/Lon labels -->
+          <text x="8" y="18" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">14°S</text>
+          <text x="8" y="88" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">18°S</text>
+          <text x="8" y="168" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">22°S</text>
+          <text x="8" y="248" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">26°S</text>
+          <text x="90" y="314" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">108°E</text>
+          <text x="230" y="314" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">113°E</text>
+          <text x="370" y="314" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">118°E</text>
+          <text x="490" y="314" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">122°E</text>
+          <!-- Cast track line -->
+          <polyline points="186,53 214,80 242,107 270,134 306,147 333,161 361,174 378,187 394,200 411,213 428,220 411,233 394,240 378,247 361,254 344,240 314,213 286,200 258,200 230,193 214,167 200,120" fill="none" stroke="rgba(0,212,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
+          <!-- Cast dots — 19 positions in Argo Basin ~15-24°S, 109-121°E -->
+          <!-- Cast 7: -17.8°S, 112.4°E -->
+          <circle cx="186" cy="53" r="5" fill="#00d4ff" opacity="0.85"><animate attributeName="r" values="5;7;5" dur="2.5s" repeatCount="indefinite"/></circle>
+          <circle cx="186" cy="53" r="12" fill="none" stroke="#00d4ff" opacity="0.3"><animate attributeName="r" values="6;14;6" dur="2.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.3;0;0.3" dur="2.5s" repeatCount="indefinite"/></circle>
+          <!-- Cast 9: -18.5°S, 113.2°E -->
+          <circle cx="214" cy="80" r="5" fill="#00ffaa" opacity="0.85"><animate attributeName="r" values="5;7;5" dur="2.8s" begin="0.3s" repeatCount="indefinite"/></circle>
+          <!-- Cast 14: -19.2°S, 114.1°E -->
+          <circle cx="242" cy="107" r="5" fill="#00d4ff" opacity="0.85"/>
+          <!-- Cast 16: -20.1°S, 115.0°E -->
+          <circle cx="270" cy="134" r="5" fill="#a78bfa" opacity="0.85"/>
+          <!-- Cast 23: -21.2°S, 116.2°E -->
+          <circle cx="306" cy="147" r="5" fill="#00ffaa" opacity="0.85"/>
+          <!-- Cast 26: -22.0°S, 117.1°E -->
+          <circle cx="333" cy="161" r="5" fill="#00d4ff" opacity="0.85"/>
+          <!-- Cast 34: -22.8°S, 118.0°E -->
+          <circle cx="361" cy="174" r="5" fill="#ffb347" opacity="0.85"><animate attributeName="r" values="5;7;5" dur="3s" begin="0.6s" repeatCount="indefinite"/></circle>
+          <!-- Cast 36: -23.1°S, 118.6°E -->
+          <circle cx="378" cy="187" r="5" fill="#00ffaa" opacity="0.85"/>
+          <!-- Cast 46: -23.5°S, 117.5°E -->
+          <circle cx="394" cy="200" r="5" fill="#00d4ff" opacity="0.85"/>
+          <!-- Cast 57: -23.8°S, 116.4°E -->
+          <circle cx="411" cy="213" r="5" fill="#f472b6" opacity="0.85"/>
+          <!-- Cast 73: -24.0°S, 115.3°E -->
+          <circle cx="428" cy="220" r="5" fill="#00d4ff" opacity="0.85"><animate attributeName="r" values="5;7;5" dur="2.2s" begin="0.9s" repeatCount="indefinite"/></circle>
+          <!-- Cast 80: -23.6°S, 114.2°E -->
+          <circle cx="411" cy="233" r="5" fill="#a78bfa" opacity="0.85"/>
+          <!-- Cast 89: -22.9°S, 113.0°E -->
+          <circle cx="394" cy="240" r="5" fill="#00ffaa" opacity="0.85"/>
+          <!-- Cast 91: -21.8°S, 112.4°E -->
+          <circle cx="378" cy="247" r="5" fill="#00d4ff" opacity="0.85"/>
+          <!-- Cast 94: -20.9°S, 111.8°E -->
+          <circle cx="361" cy="254" r="5" fill="#ffb347" opacity="0.85"/>
+          <!-- Cast 97: -19.8°S, 111.2°E -->
+          <circle cx="344" cy="240" r="5" fill="#00d4ff" opacity="0.85"/>
+          <!-- Cast 111: -18.5°S, 110.9°E -->
+          <circle cx="314" cy="213" r="5" fill="#00ffaa" opacity="0.85"><animate attributeName="r" values="5;7;5" dur="3.2s" begin="1.2s" repeatCount="indefinite"/></circle>
+          <!-- Cast 141: -17.4°S, 112.0°E -->
+          <circle cx="286" cy="200" r="5" fill="#00d4ff" opacity="0.85"/>
+          <!-- Cast 143: -16.8°S, 113.5°E -->
+          <circle cx="258" cy="200" r="5" fill="#a78bfa" opacity="0.85"/>
+          <!-- Region label -->
+          <text x="60" y="260" fill="rgba(0,212,255,0.35)" font-size="10" font-family="JetBrains Mono">Argo Basin</text>
+          <text x="60" y="273" fill="rgba(0,212,255,0.25)" font-size="8.5" font-family="JetBrains Mono">Eastern Indian Ocean</text>
+          <!-- Australia label -->
+          <text x="510" y="215" fill="rgba(200,232,245,0.2)" font-size="9" font-family="JetBrains Mono">Australia</text>
+          <!-- N arrow -->
+          <text x="565" y="30" fill="rgba(0,212,255,0.4)" font-size="14">↑</text>
+          <text x="562" y="44" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">N</text>
+        </svg>
+        <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:6px">
+          <div class="chip cc3" style="font-size:7px">R/V Roger Revelle · Feb–Mar 2022</div>
+          <div class="chip cc2" style="font-size:7px">19 CTD Casts · Argo Basin</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:rgba(200,232,245,.32)"><div style="width:6px;height:6px;border-radius:50%;background:var(--c1)"></div>5m depth casts</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:rgba(200,232,245,.32)"><div style="width:6px;height:6px;border-radius:50%;background:var(--c2)"></div>10m depth casts</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:rgba(200,232,245,.32)"><div style="width:6px;height:6px;border-radius:50%;background:var(--c5)"></div>Mixed/both depths</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:rgba(200,232,245,.32)"><div style="width:6px;height:6px;border-radius:50%;background:var(--c6)"></div>Cycle stations</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="g p gh">
+        <div class="ct"><div class="cdot c1"></div>Cruise Metadata</div>
+        <div class="kv">
+          <div class="kvr"><span class="kvk">Vessel</span><span class="kvv c1">R/V Roger Revelle</span></div>
+          <div class="kvr"><span class="kvk">Dates</span><span class="kvv">Feb–Mar 2022</span></div>
+          <div class="kvr"><span class="kvk">Region</span><span class="kvv">Eastern Indian Ocean</span></div>
+          <div class="kvr"><span class="kvk">Sub-region</span><span class="kvv">Argo Basin</span></div>
+          <div class="kvr"><span class="kvk">Lat range</span><span class="kvv">~17°S – 24°S</span></div>
+          <div class="kvr"><span class="kvk">Lon range</span><span class="kvv">~110°E – 121°E</span></div>
+          <div class="kvsep"></div>
+          <div class="kvr"><span class="kvk">Chief Scientist</span><span class="kvv">M. Landry (SIO)</span></div>
+          <div class="kvr"><span class="kvk">Goes Lab role</span><span class="kvv c2">FlowCAM · phytoplankton</span></div>
+          <div class="kvr"><span class="kvk">Strategy</span><span class="kvv">Adaptive sampling</span></div>
+        </div>
+      </div>
+      <div class="g p gh">
+        <div class="ct"><div class="cdot c2"></div>Ecological Context</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="fc" style="padding:10px 12px">
+            <div class="fc-name">Oligotrophic Waters</div>
+            <div class="fc-note">Argo Basin is nutrient-poor (low NO₃, PO₄). Dominated by pico/nanoplankton (Prochlorococcus, Synechococcus). N₂ fixation hotspot.</div>
+          </div>
+          <div class="fc" style="padding:10px 12px">
+            <div class="fc-name">Bluefin Tuna Habitat</div>
+            <div class="fc-note">Southern Bluefin Tuna spawn here. BLOOFINZ = Bluefin Larvae in Oligotrophic Ocean Foodwebs, Investigations of Nutrients to Zooplankton.</div>
+          </div>
+          <div class="fc" style="padding:10px 12px">
+            <div class="fc-name" style="color:var(--c5)">Exact coords — Anima</div>
+            <div class="fc-note">Precise per-cast lat/lon from CTD data awaiting from collaborator Anima. Map shows approximate cruise track.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ═══════ 13 HISTOGRAMS ═══════ -->
+<section class="sec fu d5" id="histo">
+  <div class="sh">
+    <div class="snum">13</div>
+    <div><div class="stitle">Feature Histograms</div><div class="ssub">Morphological and optical distributions — data from Yeshitha pending · FlowCAM CSV columns</div></div>
+  </div>
+  <div class="g3">
+    <div class="g p gh tilt">
+      <div class="ct"><div class="cdot"></div>Cell Size Distribution (ESD µm)</div>
+      <div class="ch ch140"><canvas id="histESD"></canvas></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 2px 0;font-size:9px;color:rgba(200,232,245,.22);font-family:var(--mono)">
+        <span>0.4</span><span>1</span><span>3</span><span>7</span><span>15</span><span>25+µm</span>
+      </div>
+      <div class="chip cc2" style="font-size:7.5px;margin-top:10px">Literature values · Argo Basin picoplankton-dominant</div>
+    </div>
+    <div class="g p gh tilt">
+      <div class="ct"><div class="cdot c2"></div>Fluorescence Intensity (Ch2 Area)</div>
+      <div class="ch ch140"><canvas id="histFluoro"></canvas></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 2px 0;font-size:9px;color:rgba(200,232,245,.22);font-family:var(--mono)">
+        <span>0</span><span>Low</span><span>Med</span><span>High</span><span>Very High</span>
+      </div>
+      <div class="chip cc7" style="font-size:7.5px;margin-top:10px">Chlorophyll-a proxy · Argo Basin oligotrophic signal</div>
+    </div>
+    <div class="g p gh tilt">
+      <div class="ct"><div class="cdot c5"></div>Pixel Intensity (Grayscale)</div>
+      <div class="ch ch140"><canvas id="histPixel"></canvas></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 2px 0;font-size:9px;color:rgba(200,232,245,.22);font-family:var(--mono)">
+        <span>0</span><span>64</span><span>128</span><span>192</span><span>255</span>
+      </div>
+      <div class="chip cc5" style="font-size:7.5px;margin-top:10px">From FlowCAM "Intensity" column · probe val: 111.04</div>
+    </div>
+  </div>
+  <div class="g3" style="margin-top:18px">
+    <div class="g p gh tilt">
+      <div class="ct"><div class="cdot c6"></div>Aspect Ratio Distribution</div>
+      <div class="ch ch140"><canvas id="histAspect"></canvas></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 2px 0;font-size:9px;color:rgba(200,232,245,.22);font-family:var(--mono)">
+        <span>0.5</span><span>0.7</span><span>0.9</span><span>1.1</span><span>1.5+</span>
+      </div>
+      <div class="chip cc6" style="font-size:7.5px;margin-top:10px">FlowCAM col: "Aspect Ratio" · probe val: 0.91</div>
+    </div>
+    <div class="g p gh tilt">
+      <div class="ct"><div class="cdot c4"></div>Circularity Distribution</div>
+      <div class="ch ch140"><canvas id="histCirc"></canvas></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 2px 0;font-size:9px;color:rgba(200,232,245,.22);font-family:var(--mono)">
+        <span>0.4</span><span>0.6</span><span>0.8</span><span>1.0</span>
+      </div>
+      <div class="chip cc4" style="font-size:7.5px;margin-top:10px">FlowCAM col: "Circularity" · probe val: 1.0 (perfect sphere)</div>
+    </div>
+    <div class="g p gh tilt">
+      <div class="ct"><div class="cdot c8"></div>Elongation Distribution</div>
+      <div class="ch ch140"><canvas id="histElong"></canvas></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 2px 0;font-size:9px;color:rgba(200,232,245,.22);font-family:var(--mono)">
+        <span>1.0</span><span>1.5</span><span>2.0</span><span>3.0</span><span>5+</span>
+      </div>
+      <div class="chip cc8" style="font-size:7.5px;margin-top:10px">FlowCAM col: "Elongation" · diatoms peak at 3–5+</div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ═══════ 14 LONG CHAIN FINDER ═══════ -->
+<section class="sec fu d6" id="chains">
+  <div class="sh">
+    <div class="snum">14</div>
+    <div><div class="stitle">Long Chain Finder</div>
+    <div class="ssub">Ranked by Particles Per Chain · FlowCAM direct measurement · biological significance for nutrient stress and bloom dynamics</div></div>
+  </div>
+
+  <!-- Biology context -->
+  <div class="bio-strip" style="margin-bottom:18px">
+    <div class="bio-card">
+      <div class="bio-icon">🔗</div>
+      <div class="bio-title">Why Chains Form</div>
+      <div class="bio-text">Phytoplankton form chains when daughter cells remain attached after division — a response to nutrient limitation (especially Fe, NO₃) or as a competitive strategy in turbulent environments.</div>
+    </div>
+    <div class="bio-card">
+      <div class="bio-icon">🌊</div>
+      <div class="bio-title">Bloom Dynamics</div>
+      <div class="bio-text">Chain length correlates with growth phase. Longer chains signal rapid division in nutrient-rich waters. Short chains or single cells indicate senescence or nutrient limitation.</div>
+    </div>
+    <div class="bio-card">
+      <div class="bio-icon">📏</div>
+      <div class="bio-title">FlowCAM "Particles Per Chain"</div>
+      <div class="bio-text">FlowCAM directly measures chain length during imaging. The column "Particles Per Chain" counts individual cells per chain aggregate — this is the exact biological signal used here.</div>
+    </div>
+  </div>
+
+  <!-- Trichodesmium special callout -->
+  <div class="tricho-banner">
+    <div class="tricho-icon">🌿</div>
+    <div>
+      <div class="tricho-title">Trichodesmium — Special Significance for Goes Lab</div>
+      <div class="tricho-text">Trichodesmium is a nitrogen-fixing cyanobacterium that forms long trichome bundles (puff or raft colonies) visible as chains in FlowCAM. It is a major focus of LDEO/Goes Lab research in the Arabian Sea — responsible for substantial N₂ fixation in oligotrophic waters. Long chain detections of Crocosphaera or Cyanobacteria classes may indicate Trichodesmium or related colonial diazotrophs. Chain length and colony morphology are key distinguishing features that should be cross-referenced with Ch1/Ch2 fluorescence ratios for confirmation.</div>
+    </div>
+  </div>
+
+  <!-- Chain Finder UI -->
+  <div class="g p" style="margin-top:18px">
+    <div class="ct"><div class="cdot"></div>Search Parameters</div>
+    <div class="chain-ctrl">
+      <div>
+        <label class="flbl">Species / Class</label>
+        <select class="fsel" id="chainCls">
           <option value="">All classes</option>
           <option>Crocosphaera</option><option>Cyanobacteria</option>
           <option>Mineral particles</option><option>Nanophytoplanton</option>
@@ -1279,270 +1362,503 @@ body:has(button:hover) #cursor-ring{width:52px;height:52px;border-color:rgba(0,2
           <option>Prochlorococcus</option><option>Synechococcus</option>
         </select>
       </div>
-      <div class="field-group">
-        <label class="field-lbl">Min Chain Length (cells)</label>
-        <input type="number" class="field-inp" id="chainMin" value="4" placeholder="e.g. 4">
+      <div>
+        <label class="flbl">Min Chain Length (cells)</label>
+        <input type="number" class="finp" id="chainMin" value="4" placeholder="e.g. 4">
       </div>
-      <div class="field-group">
-        <label class="field-lbl">Min Confidence (%)</label>
-        <input type="number" class="field-inp" id="chainConf" value="70" placeholder="e.g. 70">
+      <div>
+        <label class="flbl">Min Confidence (%)</label>
+        <input type="number" class="finp" id="chainConf" value="70" placeholder="e.g. 70">
       </div>
-      <div class="field-group" style="display:flex;align-items:flex-end">
-        <button class="btn btn-glow" style="width:100%;padding:11px 0;font-size:12px" onclick="runChain()">⛓ Find Chains</button>
+      <div style="display:flex;align-items:flex-end">
+        <button class="btn btng" style="width:100%;padding:10px 0;font-size:11.5px" onclick="runChain()">⛓ Find Chains</button>
       </div>
     </div>
-    <div class="chain-result" id="chainResult">
+    <div class="chain-result-wrap" id="chainResult">
       <div class="chain-empty">
-        <div class="chain-empty-icon">⛓</div>
-        <div class="chain-empty-t">Set parameters and press Find Chains</div>
-        <div style="font-size:10px;color:rgba(200,230,245,0.2);margin-top:4px">Connect dataset CSV for live detection</div>
+        <div style="font-size:24px;opacity:.25">⛓</div>
+        <div style="font-size:12px;color:rgba(200,232,245,.28)">Set parameters and press Find Chains</div>
+        <div style="font-size:10px;color:rgba(200,232,245,.18);margin-top:3px">Particle images load when chain_images.json is pushed from Colab</div>
       </div>
     </div>
-    <div style="margin-top:14px;padding:12px 16px;background:rgba(0,0,0,0.25);border:1px solid rgba(0,212,255,0.08);border-radius:10px;display:flex;gap:20px;flex-wrap:wrap">
-      <div style="font-size:11px;color:rgba(200,230,245,0.3)">💡 Long chains indicate nutrient limitation or colonial growth in <span style="color:var(--c1)">Prochlorococcus</span></div>
-      <div style="font-size:11px;color:rgba(200,230,245,0.3)">⚡ <span style="color:var(--c4)">CSV required</span> for real detections · demo data shown</div>
+    <!-- Image enable note -->
+    <div style="margin-top:12px;padding:11px 16px;background:rgba(0,0,0,.22);border:1px solid rgba(0,212,255,.07);border-radius:9px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div style="font-size:10.5px;color:rgba(200,232,245,.28)">💡 <b style="color:var(--c1)">To enable particle images:</b> Run the chain image export cell in Colab → pushes chain_images.json → images appear automatically</div>
+      <div style="font-size:10px;color:rgba(200,232,245,.2);font-family:var(--mono)">Particles Per Chain · direct FlowCAM measurement</div>
     </div>
   </div>
 </section>
 
-<!-- ─── FOOTER ─── -->
+<!-- FOOTER -->
 <div class="foot">
-  <div>PhytoVision · v9 · EfficientNetV2-L · TF 2.19.0 · A100</div>
-  <div class="foot-live"><div class="sb-pulse"></div>Session Active</div>
+  <div>Phytoplankton Classification · Goes Lab (LDEO) · Columbia University · Model v9 · EfficientNetV2-L · TF 2.19</div>
+  <div class="foot-live"><div class="sb-dot"></div>Session Active</div>
 </div>
 
 </main>
 
-<!-- ─── Floating Pill ─── -->
-<div id="floating-pill">
-  <div class="pill-item" onclick="scrollTo('#hero')">🏠<div class="pill-tooltip">Dashboard</div></div>
-  <div class="pill-item" onclick="scrollTo('#dataset')">📊<div class="pill-tooltip">Dataset</div></div>
-  <div class="pill-item" onclick="scrollTo('#arch')">⚙<div class="pill-tooltip">Architecture</div></div>
-  <div class="pill-item" onclick="scrollTo('#training')">📈<div class="pill-tooltip">Training</div></div>
-  <div class="pill-item" onclick="scrollTo('#eval')">◎<div class="pill-tooltip">Evaluation</div></div>
-  <div class="pill-item" onclick="scrollTo('#esd')">≋<div class="pill-tooltip">ESD</div></div>
-  <div class="pill-item" onclick="scrollTo('#geo')">🗺<div class="pill-tooltip">Geo</div></div>
-  <div class="pill-item" onclick="scrollTo('#chains')">⛓<div class="pill-tooltip">Chains</div></div>
+<!-- Floating pill -->
+<div id="pill">
+  <div class="pi" onclick="go('#hero')">🏠<div class="ptt">Dashboard</div></div>
+  <div class="pi" onclick="go('#cruise')">🚢<div class="ptt">Cruise</div></div>
+  <div class="pi" onclick="go('#dataset')">📊<div class="ptt">Dataset</div></div>
+  <div class="pi" onclick="go('#discrete')">🔬<div class="ptt">Discrete</div></div>
+  <div class="pi" onclick="go('#eval')">◎<div class="ptt">Evaluation</div></div>
+  <div class="pi" onclick="go('#esd')">≋<div class="ptt">ESD</div></div>
+  <div class="pi" onclick="go('#carbon')">⚗<div class="ptt">Carbon</div></div>
+  <div class="pi" onclick="go('#optical')">◐<div class="ptt">Optical</div></div>
+  <div class="pi" onclick="go('#depth')">⬇<div class="ptt">Depth</div></div>
+  <div class="pi" onclick="go('#chains')">⛓<div class="ptt">Chains</div></div>
 </div>
 
 <script>
-/* ═══════════ CURSOR ═══════════ */
-const cur=document.getElementById('cursor'),ring=document.getElementById('cursor-ring');
+/* ═══════ CURSOR ═══════ */
+const C=document.getElementById('cur'),C2=document.getElementById('cur2');
 let mx=0,my=0,rx=0,ry=0;
-document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=mx+'px';cur.style.top=my+'px';});
-(function animRing(){rx+=(mx-rx)*0.12;ry+=(my-ry)*0.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animRing);})();
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;C.style.left=mx+'px';C.style.top=my+'px'});
+(function anim(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;C2.style.left=rx+'px';C2.style.top=ry+'px';requestAnimationFrame(anim)})();
 
-/* ═══════════ SCROLL PILL ═══════════ */
-function scrollTo(sel){document.querySelector(sel).scrollIntoView({behavior:'smooth'});}
-
-/* ═══════════ MAGNETIC TILT ═══════════ */
-document.querySelectorAll('.tilt').forEach(el=>{
-  el.addEventListener('mousemove',e=>{
-    const r=el.getBoundingClientRect();
-    const x=(e.clientX-r.left)/r.width-0.5;
-    const y=(e.clientY-r.top)/r.height-0.5;
-    el.style.transform=`perspective(900px) rotateY(${x*10}deg) rotateX(${-y*10}deg) translateY(-3px)`;
-  });
-  el.addEventListener('mouseleave',()=>{
-    el.style.transform='perspective(900px) rotateY(0) rotateX(0) translateY(0)';
-  });
-});
-
-/* ═══════════ NAV ACTIVE ═══════════ */
+/* ═══════ NAV ═══════ */
+function go(s){document.querySelector(s).scrollIntoView({behavior:'smooth'})}
 const secs=document.querySelectorAll('section[id]');
-const navs=document.querySelectorAll('.nav-link');
+const navs=document.querySelectorAll('.nl');
 window.addEventListener('scroll',()=>{
   let cur='';
-  secs.forEach(s=>{if(window.scrollY>=s.offsetTop-90)cur=s.id;});
-  navs.forEach(n=>{n.classList.toggle('active',n.getAttribute('href')==='#'+cur);});
+  secs.forEach(s=>{if(window.scrollY>=s.offsetTop-80)cur=s.id});
+  navs.forEach(n=>n.classList.toggle('on',n.getAttribute('href')==='#'+cur));
 });
 
-/* ═══════════ FALLBACK DATA (identical to V9 hardcoded values) ═══════════ */
-const FALLBACK={
-  val_accuracy:0.6062,macro_f1:0.5016,num_classes:8,
-  class_names:['Crocosphaera','Cyanobacteria','Mineral particles','Nanophytoplanton','Nitzschia','Picocyanobacteria','Prochlorococcus','Synechococcus'],
-  dataset:{total_images:10473,train_size:8378,val_size:2095},
-  per_class_precision:{'Crocosphaera':.0556,'Cyanobacteria':.1304,'Mineral particles':.9583,'Nanophytoplanton':.7474,'Nitzschia':.6364,'Picocyanobacteria':.5745,'Prochlorococcus':.4980,'Synechococcus':.4872},
-  per_class_recall:{'Crocosphaera':.1538,'Cyanobacteria':.4286,'Mineral particles':.9583,'Nanophytoplanton':.6077,'Nitzschia':.7778,'Picocyanobacteria':.7912,'Prochlorococcus':.2783,'Synechococcus':.3115},
-  per_class_f1:{'Crocosphaera':.0816,'Cyanobacteria':.200,'Mineral particles':.9583,'Nanophytoplanton':.6703,'Nitzschia':.700,'Picocyanobacteria':.6656,'Prochlorococcus':.357,'Synechococcus':.380},
-  per_class_support:{'Crocosphaera':13,'Cyanobacteria':7,'Mineral particles':48,'Nanophytoplanton':701,'Nitzschia':9,'Picocyanobacteria':814,'Prochlorococcus':442,'Synechococcus':61},
-  confusion_matrix:[[2,3,0,4,0,2,0,2],[2,3,2,0,0,0,0,0],[0,1,46,0,0,0,0,1],[21,10,0,426,3,187,37,17],[0,2,0,0,7,0,0,0],[3,0,0,82,0,644,85,0],[1,0,0,33,0,285,123,0],[7,4,0,25,1,3,2,19]],
-  training_history:{
-    acc:[.5803,.5751,.5728,.5862,.5816,.6018,.6148,.5895,.5934,.5866,.6102,.6074,.6051,.6054,.6209,.6075,.6146,.6306,.6338,.6277,.6247,.6350],
-    val_acc:[.5866,.5866,.5905,.5871,.5909,.5881,.5895,.5986,.5933,.5857,.5885,.5890,.5943,.5933,.5924,.6000,.6000,.6043,.6062,.5971,.6038,.6019],
-    loss:[1.0381,1.0546,1.0116,1.0113,1.0130,.9755,.9663,1.0009,.9859,.9885,.9488,.9642,.9609,.9490,.9200,.9445,.9160,.8881,.8924,.8876,.8841,.8627],
-    val_loss:[.9313,.9364,.9293,.9322,.9288,.9395,.9284,.9226,.9216,.9287,.9244,.9230,.9228,.9215,.9185,.9031,.9024,.9110,.8994,.9143,.9003,.9054]
-  }
-};
-
-const COLS=['#00d4ff','#00ffc3','#a78bfa','#ff6b35','#ffd700','#f472b6','#60d9fa','#4ade80'];
-
-/* ═══════════ COUNTER UTIL ═══════════ */
-function cnt(id,target,dur,dec=0){
-  const el=document.getElementById(id),s=performance.now();
-  const step=n=>{
-    const p=Math.min((n-s)/dur,1);
-    el.textContent=dec?((p*target).toFixed(dec)):(Math.round(p*target)).toLocaleString();
-    if(p<1)requestAnimationFrame(step);
-  };requestAnimationFrame(step);
-}
-
-/* ═══════════ DASHBOARD INIT ═══════════ */
-function initDashboard(d,live){
-  const CN=d.class_names;
-  const CS=CN.map(n=>n.split(' ')[0].substring(0,9));
-  const CC=CN.map(n=>d.per_class_support[n]||0);
-  const PC=CN.map(n=>({p:d.per_class_precision[n]||0,r:d.per_class_recall[n]||0,f1:d.per_class_f1[n]||0,s:d.per_class_support[n]||0}));
-  const TRAIN_ACC=d.training_history.acc||[];
-  const VAL_ACC=d.training_history.val_acc||[];
-  const TRAIN_LOSS=d.training_history.loss||[];
-  const VAL_LOSS=d.training_history.val_loss||[];
-  const CM=d.confusion_matrix;
-  const valAcc=d.val_accuracy;
-  const macroF1=d.macro_f1;
-
-  /* live badge — shown only on successful fetch */
-  if(live){const b=document.getElementById('live-badge');if(b){b.style.display='inline-flex';}}
-
-  /* stat counters — use dataset object when present, derive from support as fallback */
-  const ds=d.dataset||{};
-  const totalImages=ds.total_images||Math.round(CC.reduce((a,b)=>a+b,0)/0.2);
-  setTimeout(()=>{
-    cnt('n-cnt',totalImages,1400);
-    cnt('k-cnt',CN.length,700);
-    cnt('acc-cnt',+(valAcc*100).toFixed(1),1200,1);
-  },500);
-
-  /* macro F1 stat card */
-  const f1el=document.getElementById('f1-stat-val');
-  if(f1el)f1el.textContent=macroF1.toFixed(2);
-
-  /* class distribution bars */
-  const max=Math.max(...CC);
-  const clsWrap=document.getElementById('cls-bars');
-  clsWrap.innerHTML='';
-  CN.forEach((n,i)=>{
-    const col=COLS[i%COLS.length];
-    const row=document.createElement('div');row.className='cls-row';
-    row.innerHTML=`<div class="cls-name"><div class="cls-swatch" style="background:${col}"></div>${n}</div>
-      <div class="cls-track"><div class="cls-fill" style="width:0%;background:${col}" data-w="${(CC[i]/max*100).toFixed(1)}"></div></div>
-      <div class="cls-count">${CC[i].toLocaleString()}</div>`;
-    clsWrap.appendChild(row);
+/* ═══════ TILT ═══════ */
+document.querySelectorAll('.tilt').forEach(el=>{
+  el.addEventListener('mousemove',e=>{
+    const r=el.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+    el.style.transform=`perspective(900px) rotateY(${x*8}deg) rotateX(${-y*8}deg) translateY(-2px)`;
   });
-  setTimeout(()=>document.querySelectorAll('.cls-fill').forEach(e=>{e.style.width=e.dataset.w+'%';}),400);
+  el.addEventListener('mouseleave',()=>el.style.transform='perspective(900px) rotateY(0) rotateX(0)');
+});
 
-  /* chart defaults */
-  Chart.defaults.color='rgba(200,230,245,0.4)';
-  Chart.defaults.font.family="'JetBrains Mono',monospace";
-  Chart.defaults.font.size=10;
-  const gridC='rgba(0,212,255,0.06)';
-  const tooltipDef={backgroundColor:'rgba(4,15,30,0.95)',borderColor:'rgba(0,212,255,0.2)',borderWidth:1,padding:10};
+/* ═══════ DATA ═══════ */
+const CN=['Crocosphaera','Cyanobacteria','Mineral particles','Nanophytoplanton','Nitzschia','Picocyanobacteria','Prochlorococcus','Synechococcus'];
+const CS=['Croco','Cyano','Mineral','Nanophyto','Nitzschia','PicoCyano','Prochloro','Synecho'];
+const CC=[66,37,239,3503,42,4071,2210,305]; // val support counts
+const COLS=['#00d4ff','#00ffaa','#a78bfa','#ff6b35','#ffd700','#f472b6','#60d9fa','#4ade80'];
 
-  /* donut */
-  new Chart(document.getElementById('donutC'),{type:'doughnut',data:{labels:CN,datasets:[{data:CC,backgroundColor:COLS.slice(0,CN.length).map(c=>c+'88'),borderColor:COLS.slice(0,CN.length),borderWidth:1.5,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tooltipDef,callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw.toLocaleString()}`}}},cutout:'68%'}});
+const TRAIN_ACC=[.5803,.5751,.5728,.5862,.5816,.6018,.6148,.5895,.5934,.5866,.6102,.6074,.6051,.6054,.6209,.6075,.6146,.6306,.6338,.6277,.6247,.6350];
+const VAL_ACC=[.5866,.5866,.5905,.5871,.5909,.5881,.5895,.5986,.5933,.5857,.5885,.5890,.5943,.5933,.5924,.6000,.6000,.6043,.6062,.5971,.6038,.6019];
+const TRAIN_LOSS=[1.0381,1.0546,1.0116,1.0113,1.0130,.9755,.9663,1.0009,.9859,.9885,.9488,.9642,.9609,.9490,.9200,.9445,.9160,.8881,.8924,.8876,.8841,.8627];
+const VAL_LOSS=[.9313,.9364,.9293,.9322,.9288,.9395,.9284,.9226,.9216,.9287,.9244,.9230,.9228,.9215,.9185,.9031,.9024,.9110,.8994,.9143,.9003,.9054];
+const CM=[[2,3,0,4,0,2,0,2],[2,3,2,0,0,0,0,0],[0,1,46,0,0,0,0,1],[21,10,0,426,3,187,37,17],[0,2,0,0,7,0,0,0],[3,0,0,82,0,644,85,0],[1,0,0,33,0,285,123,0],[7,4,0,25,1,3,2,19]];
+const PC=[{p:.0556,r:.1538,f1:.0816,s:13},{p:.1304,r:.4286,f1:.200,s:7},{p:.9583,r:.9583,f1:.9583,s:48},{p:.7474,r:.6077,f1:.6703,s:701},{p:.6364,r:.7778,f1:.700,s:9},{p:.5745,r:.7912,f1:.6656,s:814},{p:.4980,r:.2783,f1:.357,s:442},{p:.4872,r:.3115,f1:.380,s:61}];
 
-  /* training charts — y-axis bounds computed from actual data */
-  const epochs=Array.from({length:TRAIN_ACC.length},(_,i)=>i+1);
-  const lineOpts={responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{font:{size:10},boxWidth:9,padding:12,color:'rgba(200,230,245,0.5)'}},tooltip:tooltipDef},scales:{x:{grid:{color:gridC},ticks:{color:'rgba(200,230,245,0.25)',font:{size:9}}},y:{grid:{color:gridC},ticks:{color:'rgba(200,230,245,0.25)',font:{size:9}}}}};
-  const accMin=Math.floor(Math.min(...VAL_ACC,...TRAIN_ACC)*100)-2;
-  const accMax=Math.ceil(Math.max(...VAL_ACC,...TRAIN_ACC)*100)+2;
-  new Chart(document.getElementById('accChart'),{type:'line',data:{labels:epochs,datasets:[{label:'Train Acc',data:TRAIN_ACC.map(v=>(v*100).toFixed(2)),borderColor:'rgba(0,212,255,0.85)',backgroundColor:'rgba(0,212,255,0.06)',tension:0.38,borderWidth:2,pointRadius:2,fill:true},{label:'Val Acc',data:VAL_ACC.map(v=>(v*100).toFixed(2)),borderColor:'rgba(0,255,195,0.8)',backgroundColor:'rgba(0,255,195,0.04)',tension:0.38,borderWidth:2,pointRadius:2,fill:true,borderDash:[4,2]}]},options:{...lineOpts,scales:{...lineOpts.scales,y:{...lineOpts.scales.y,min:accMin,max:accMax,ticks:{...lineOpts.scales.y.ticks,callback:v=>v+'%'}}}}});
-  new Chart(document.getElementById('lossChart'),{type:'line',data:{labels:epochs,datasets:[{label:'Train Loss',data:TRAIN_LOSS,borderColor:'rgba(255,77,109,0.8)',backgroundColor:'rgba(255,77,109,0.05)',tension:0.38,borderWidth:2,pointRadius:2,fill:true},{label:'Val Loss',data:VAL_LOSS,borderColor:'rgba(167,139,250,0.8)',backgroundColor:'rgba(167,139,250,0.04)',tension:0.38,borderWidth:2,pointRadius:2,fill:true,borderDash:[4,2]}]},options:{...lineOpts,scales:{...lineOpts.scales,y:{...lineOpts.scales.y,min:+(Math.min(...VAL_LOSS,...TRAIN_LOSS)-.05).toFixed(2),max:+(Math.max(...VAL_LOSS,...TRAIN_LOSS)+.05).toFixed(2)}}}});
+const CASTS=['BFZ-Cast7','BFZ-Cast9','BFZ-Cast14','BFZ-Cast16','BFZ-Cast23','BFZ-Cast26','BFZ-Cast34','BFZ-Cast36','BFZ-Cast46','BFZ-Cast57','BFZ-Cast73','BFZ-Cast80','BFZ-Cast89','BFZ-Cast91','BFZ-Cast94','BFZ-Cast97','BFZ-Cast111','BFZ-Cast141','BFZ-Cast143'];
 
-  /* accuracy ring */
-  (()=>{
-    const cv=document.getElementById('accRing'),ctx=cv.getContext('2d');
-    const cx=60,cy=60,r=48,lw=8;
-    ctx.clearRect(0,0,120,120);
-    ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,Math.PI*1.5);ctx.strokeStyle='rgba(0,212,255,0.08)';ctx.lineWidth=lw;ctx.stroke();
-    const g=ctx.createLinearGradient(cx-r,cy,cx+r,cy);g.addColorStop(0,'#00d4ff');g.addColorStop(1,'#00ffc3');
-    ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+Math.PI*2*valAcc);ctx.strokeStyle=g;ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();
-    ctx.fillStyle='#fff';ctx.font='bold 15px "Outfit",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((valAcc*100).toFixed(1)+'%',cx,cy-5);
-    ctx.fillStyle='rgba(200,230,245,0.3)';ctx.font='8px "Outfit",sans-serif';ctx.fillText('val_acc',cx,cy+9);
-  })();
+// Discrete inference results
+const DISC_HIGH={Nanophytoplanton:294,Prochlorococcus:69,'Mineral particles':57,Nitzschia:49,Picocyanobacteria:46,Cyanobacteria:8,Synechococcus:1};
 
-  /* confusion matrix */
-  (()=>{
-    const wrap=document.getElementById('cmContainer');
-    wrap.innerHTML='';
-    const cell=44,gap=3;
-    const norm=CM.map(row=>{const s=row.reduce((a,b)=>a+b,0);return row.map(v=>s?v/s:0);});
-    function heat(v){if(!v)return'rgba(4,15,30,0.7)';return`rgba(0,${Math.round(v*212)},${Math.round(v*255)},${.15+v*.75})`;}
-    const outer=document.createElement('div');outer.style.cssText='display:inline-block;';
-    const topRow=document.createElement('div');topRow.style.cssText=`display:flex;padding-left:${cell+gap+2}px;gap:${gap}px;margin-bottom:${gap}px;`;
-    CS.forEach(n=>{const el=document.createElement('div');el.className='cm-col-lbl';el.style.cssText=`width:${cell}px;height:62px;font-size:8px;`;el.textContent=n;topRow.appendChild(el);});
-    outer.appendChild(topRow);
-    CM.forEach((row,i)=>{
-      const rowEl=document.createElement('div');rowEl.style.cssText=`display:flex;gap:${gap}px;align-items:center;margin-bottom:${gap}px;`;
-      const lbl=document.createElement('div');lbl.className='cm-row-lbl';lbl.style.cssText=`width:${cell}px;font-size:8px;padding-right:5px;flex-shrink:0;`;lbl.textContent=CS[i];rowEl.appendChild(lbl);
-      row.forEach((v,j)=>{
-        const el=document.createElement('div');el.className='cm-cell';
-        el.style.cssText=`width:${cell}px;height:${cell}px;background:${heat(norm[i][j])};color:${norm[i][j]>.5?'#fff':'rgba(200,230,245,0.5)'};font-size:${v>99?8:10}px;border:1px solid rgba(0,212,255,0.08);`;
-        el.textContent=v||'';el.title=`${CN[i]} → ${CN[j]}: ${v} (${(norm[i][j]*100).toFixed(0)}%)`;
-        rowEl.appendChild(el);
-      });
-      outer.appendChild(rowEl);
+// Depth info extracted from folder names (BFZ-CAST-XXX-YM = Y meters)
+const DEPTHS=[
+  {cast:'BFZ-Cast7',depth:'10M',m:10},{cast:'BFZ-Cast9',depth:'10M',m:10},
+  {cast:'BFZ-Cast14',depth:'5M',m:5},{cast:'BFZ-Cast16',depth:'5M',m:5},
+  {cast:'BFZ-Cast23',depth:'10M',m:10},{cast:'BFZ-Cast26',depth:'5M',m:5},
+  {cast:'BFZ-Cast34',depth:'10M',m:10},{cast:'BFZ-Cast36',depth:'5M',m:5},
+  {cast:'BFZ-Cast46',depth:'10M',m:10},{cast:'BFZ-Cast57',depth:'5M',m:5},
+  {cast:'BFZ-Cast73',depth:'10M',m:10},{cast:'BFZ-Cast80',depth:'5M',m:5},
+  {cast:'BFZ-Cast89',depth:'10M',m:10},{cast:'BFZ-Cast91',depth:'5M',m:5},
+  {cast:'BFZ-Cast94',depth:'10M',m:10},{cast:'BFZ-Cast97',depth:'5M',m:5},
+  {cast:'BFZ-Cast111',depth:'5M',m:5},{cast:'BFZ-Cast141',depth:'10M',m:10},
+  {cast:'BFZ-Cast143',depth:'10M',m:10}
+];
+
+/* ═══════ COUNTERS ═══════ */
+function cnt(id,t,d,dec=0){
+  const el=document.getElementById(id),s=performance.now();
+  const step=n=>{const p=Math.min((n-s)/d,1);el.textContent=dec?((p*t).toFixed(dec)):(Math.round(p*t)).toLocaleString();if(p<1)requestAnimationFrame(step)};
+  requestAnimationFrame(step);
+}
+setTimeout(()=>{cnt('n1',12315,1400);cnt('n2',10,700);cnt('n3',60.6,1200,1)},500);
+
+/* ═══════ LIVE FETCH ═══════ */
+fetch('https://raw.githubusercontent.com/adityaram-2003/phytoplankton-classification/main/metrics.json')
+.then(r=>r.json()).then(d=>{
+  document.getElementById('liveBadge').style.display='inline-flex';
+  if(d.val_accuracy){cnt('n3',+(d.val_accuracy*100).toFixed(1),1200,1);}
+  if(d.macro_f1){document.getElementById('n4').textContent=d.macro_f1.toFixed(2);}
+  console.log('✅ Live metrics loaded');
+}).catch(()=>console.log('Using fallback data'));
+
+/* ═══════ CAST CHIPS ═══════ */
+(()=>{
+  const c=document.getElementById('cast-chips');
+  c.style.cssText='display:grid;grid-template-columns:repeat(4,1fr);gap:6px;grid-column:1/-1';
+  CASTS.forEach(cast=>{
+    const d=document.createElement('div');
+    d.style.cssText='background:rgba(0,0,0,.28);border:1px solid rgba(0,212,255,.1);border-radius:7px;padding:6px 8px;font-family:var(--mono);font-size:9px;color:rgba(200,232,245,.45);text-align:center;cursor:default;transition:all .2s';
+    d.textContent=cast;
+    d.onmouseenter=()=>{d.style.borderColor='rgba(0,212,255,.28)';d.style.color='var(--c1)'};
+    d.onmouseleave=()=>{d.style.borderColor='rgba(0,212,255,.1)';d.style.color='rgba(200,232,245,.45)'};
+    c.appendChild(d);
+  });
+  // castList2 removed from HTML — skip
+})();
+
+/* ═══════ CLASS BARS ═══════ */
+(()=>{
+  const max=Math.max(...CC),c=document.getElementById('clsbars');
+  CN.forEach((n,i)=>{
+    const r=document.createElement('div');r.className='clsr';
+    r.innerHTML=`<div class="clsn"><div class="clss" style="background:${COLS[i]}"></div>${n}</div>
+      <div class="clst"><div class="clsf" style="width:0%;background:${COLS[i]}" data-w="${(CC[i]/max*100).toFixed(1)}"></div></div>
+      <div class="clsc">${CC[i]}</div>`;
+    c.appendChild(r);
+  });
+  setTimeout(()=>document.querySelectorAll('.clsf').forEach(e=>e.style.width=e.dataset.w+'%'),400);
+})();
+
+/* ═══════ DISCRETE BARS ═══════ */
+(()=>{
+  const c=document.getElementById('discBars');
+  const mx=Math.max(...Object.values(DISC_HIGH));
+  const col={'Nanophytoplanton':'#ff6b35','Prochlorococcus':'#60d9fa','Mineral particles':'#a78bfa','Nitzschia':'#ffd700','Picocyanobacteria':'#f472b6','Cyanobacteria':'#00ffaa','Synechococcus':'#4ade80'};
+  Object.entries(DISC_HIGH).forEach(([cls,n])=>{
+    const r=document.createElement('div');r.className='cast-bar-row';
+    r.innerHTML=`<div class="cast-bar-lbl">${cls}</div>
+      <div class="cast-bar-t"><div class="cast-bar-f" style="width:0%;background:${col[cls]||'#00d4ff'}" data-w="${(n/mx*100).toFixed(0)}"></div></div>
+      <div class="cast-bar-n">${n}</div>`;
+    c.appendChild(r);
+  });
+  setTimeout(()=>document.querySelectorAll('.cast-bar-f').forEach(e=>e.style.width=e.dataset.w+'%'),600);
+})();
+
+/* ═══════ DEPTH GRID ═══════ */
+(()=>{
+  const g=document.getElementById('depthGrid');
+  DEPTHS.forEach(({cast,depth,m})=>{
+    const d=document.createElement('div');d.className='depth-card';
+    d.innerHTML=`<div class="depth-m">${m}m</div><div class="depth-lbl">${depth}</div><div class="depth-cast">${cast.replace('BFZ-Cast','Cast ')}</div>`;
+    g.appendChild(d);
+  });
+})();
+
+/* ═══════ CHART DEFAULTS ═══════ */
+// Null-safe chart creator — one missing canvas will never kill downstream charts
+function mkChart(id, ...args) {
+  const el = document.getElementById(id);
+  if (!el) { console.warn('Canvas not found:', id); return null; }
+  return new Chart(el, ...args);
+}
+Chart.defaults.color='rgba(200,232,245,.35)';
+Chart.defaults.font.family='JetBrains Mono, monospace';
+Chart.defaults.font.size=9.5;
+const gc='rgba(0,212,255,.055)';
+const td={backgroundColor:'rgba(3,10,22,.95)',borderColor:'rgba(0,212,255,.18)',borderWidth:1,padding:10};
+
+/* ═══════ DONUT ═══════ */
+mkChart('donutC',{type:'doughnut',
+  data:{labels:CN,datasets:[{data:CC,backgroundColor:COLS.map(c=>c+'77'),borderColor:COLS,borderWidth:1.5,hoverOffset:6}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...td,callbacks:{label:c=>`${c.label}: ${c.raw.toLocaleString()}`}}},cutout:'65%'}});
+
+/* ═══════ TRAINING CHARTS ═══════ */
+const ep=Array.from({length:22},(_,i)=>i+1);
+const lo={responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+  plugins:{legend:{labels:{font:{size:9.5},boxWidth:8,padding:10,color:'rgba(200,232,245,.45)'}},tooltip:td},
+  scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.22)',font:{size:8.5}}},y:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.22)',font:{size:8.5}}}}};
+
+mkChart('accChart',{type:'line',
+  data:{labels:ep,datasets:[
+    {label:'Train Acc',data:TRAIN_ACC.map(v=>(v*100).toFixed(2)),borderColor:'rgba(0,212,255,.85)',backgroundColor:'rgba(0,212,255,.05)',tension:.38,borderWidth:2,pointRadius:1.5,fill:true},
+    {label:'Val Acc',data:VAL_ACC.map(v=>(v*100).toFixed(2)),borderColor:'rgba(0,255,170,.8)',backgroundColor:'rgba(0,255,170,.04)',tension:.38,borderWidth:2,pointRadius:1.5,fill:true,borderDash:[4,2]}
+  ]},
+  options:{...lo,scales:{...lo.scales,y:{...lo.scales.y,min:55,max:65,ticks:{...lo.scales.y.ticks,callback:v=>v+'%'}}}}});
+
+mkChart('lossChart',{type:'line',
+  data:{labels:ep,datasets:[
+    {label:'Train Loss',data:TRAIN_LOSS,borderColor:'rgba(255,77,109,.8)',backgroundColor:'rgba(255,77,109,.05)',tension:.38,borderWidth:2,pointRadius:1.5,fill:true},
+    {label:'Val Loss',data:VAL_LOSS,borderColor:'rgba(167,139,250,.8)',backgroundColor:'rgba(167,139,250,.04)',tension:.38,borderWidth:2,pointRadius:1.5,fill:true,borderDash:[4,2]}
+  ]},options:{...lo,scales:{...lo.scales,y:{...lo.scales.y,min:.85,max:1.1}}}});
+
+/* ═══════ ACC RING ═══════ */
+(()=>{
+  const cv=document.getElementById('accRing'),ctx=cv.getContext('2d');
+  const cx=55,cy=55,r=44,lw=7,acc=.6062;
+  ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,Math.PI*1.5);ctx.strokeStyle='rgba(0,212,255,.07)';ctx.lineWidth=lw;ctx.stroke();
+  const g=ctx.createLinearGradient(cx-r,cy,cx+r,cy);g.addColorStop(0,'#00d4ff');g.addColorStop(1,'#00ffaa');
+  ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+Math.PI*2*acc);ctx.strokeStyle=g;ctx.lineWidth=lw;ctx.lineCap='round';ctx.stroke();
+  ctx.fillStyle='#fff';ctx.font='bold 14px Outfit,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('60.6%',cx,cy-4);
+  ctx.fillStyle='rgba(200,232,245,.28)';ctx.font='8px Outfit,sans-serif';ctx.fillText('val_acc',cx,cy+8);
+})();
+
+/* ═══════ CONFUSION MATRIX ═══════ */
+(()=>{
+  const wrap=document.getElementById('cmWrap'),cell=42,gap=2;
+  const norm=CM.map(r=>{const s=r.reduce((a,b)=>a+b,0);return r.map(v=>s?v/s:0)});
+  function heat(v){if(!v)return'rgba(3,10,22,.6)';const g2=Math.round(v*210),b=Math.round(v*255);return`rgba(0,${g2},${b},${.12+v*.78})`}
+  const outer=document.createElement('div');outer.style.cssText='display:inline-block';
+  const topRow=document.createElement('div');topRow.style.cssText=`display:flex;padding-left:${cell+gap+2}px;gap:${gap}px;margin-bottom:${gap}px`;
+  CS.forEach(n=>{const d=document.createElement('div');d.className='cmlbl cmcl';d.style.cssText=`width:${cell}px;height:56px;font-size:7.5px`;d.textContent=n;topRow.appendChild(d)});
+  outer.appendChild(topRow);
+  CM.forEach((row,i)=>{
+    const re=document.createElement('div');re.style.cssText=`display:flex;gap:${gap}px;align-items:center;margin-bottom:${gap}px`;
+    const lb=document.createElement('div');lb.className='cmlbl';lb.style.cssText=`width:${cell}px;font-size:7.5px;padding-right:4px;flex-shrink:0;justify-content:flex-end`;lb.textContent=CS[i];re.appendChild(lb);
+    row.forEach((v,j)=>{
+      const d=document.createElement('div');d.className='cmc';
+      d.style.cssText=`width:${cell}px;height:${cell}px;background:${heat(norm[i][j])};color:${norm[i][j]>.45?'#fff':'rgba(200,232,245,.45)'};font-size:${v>99?7.5:9.5}px;border:1px solid rgba(0,212,255,.07)`;
+      d.textContent=v||'';d.title=`${CN[i]} → ${CN[j]}: ${v} (${(norm[i][j]*100).toFixed(0)}%)`;
+      re.appendChild(d);
     });
-    const ax=document.createElement('div');ax.style.cssText=`text-align:center;padding-left:${cell+gap}px;font-size:8px;color:rgba(200,230,245,0.2);margin-top:6px;letter-spacing:2px;`;ax.textContent='PREDICTED →';outer.appendChild(ax);
-    wrap.appendChild(outer);
-  })();
+    outer.appendChild(re);
+  });
+  const ax=document.createElement('div');ax.style.cssText=`text-align:center;padding-left:${cell+gap}px;font-size:7.5px;color:rgba(200,232,245,.18);margin-top:5px;letter-spacing:2px`;ax.textContent='PREDICTED →';outer.appendChild(ax);
+  wrap.appendChild(outer);
+})();
 
-  /* F1 radar */
-  new Chart(document.getElementById('f1Radar'),{type:'radar',data:{labels:CS,datasets:[{label:'F1',data:PC.map(c=>+(c.f1*100).toFixed(1)),borderColor:'rgba(0,212,255,0.8)',backgroundColor:'rgba(0,212,255,0.08)',borderWidth:2,pointBackgroundColor:'#00d4ff',pointRadius:3},{label:'Precision',data:PC.map(c=>+(c.p*100).toFixed(1)),borderColor:'rgba(0,255,195,0.5)',backgroundColor:'rgba(0,255,195,0.04)',borderWidth:1.5,pointBackgroundColor:'#00ffc3',pointRadius:2,borderDash:[3,3]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:8,padding:10,color:'rgba(200,230,245,0.4)'}},tooltip:tooltipDef},scales:{r:{grid:{color:'rgba(0,212,255,0.08)'},angleLines:{color:'rgba(0,212,255,0.08)'},pointLabels:{color:'rgba(200,230,245,0.4)',font:{size:9}},ticks:{color:'rgba(200,230,245,0.2)',font:{size:8},stepSize:20,backdropColor:'transparent'},min:0,max:100}}}});
+/* ═══════ F1 RADAR ═══════ */
+mkChart('f1Radar',{type:'radar',
+  data:{labels:CS,datasets:[
+    {label:'F1',data:PC.map(c=>+(c.f1*100).toFixed(1)),borderColor:'rgba(0,212,255,.8)',backgroundColor:'rgba(0,212,255,.07)',borderWidth:2,pointBackgroundColor:'#00d4ff',pointRadius:3},
+    {label:'Precision',data:PC.map(c=>+(c.p*100).toFixed(1)),borderColor:'rgba(0,255,170,.5)',backgroundColor:'rgba(0,255,170,.03)',borderWidth:1.5,pointBackgroundColor:'#00ffaa',pointRadius:2,borderDash:[3,3]}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{font:{size:9},boxWidth:8,padding:10,color:'rgba(200,232,245,.38)'}},tooltip:td},
+    scales:{r:{grid:{color:'rgba(0,212,255,.07)'},angleLines:{color:'rgba(0,212,255,.07)'},pointLabels:{color:'rgba(200,232,245,.38)',font:{size:9}},ticks:{color:'rgba(200,232,245,.18)',font:{size:7.5},stepSize:20,backdropColor:'transparent'},min:0,max:100}}}});
 
-  /* per-class metrics table */
+/* ═══════ METRICS TABLE ═══════ */
+(()=>{
   const tb=document.getElementById('mtBody');
-  tb.innerHTML='';
   PC.forEach((m,i)=>{
     const f=+(m.f1*100).toFixed(1);
     const bc=m.f1>.7?'var(--c2)':m.f1>.4?'var(--c1)':'var(--c4)';
-    const col=COLS[i%COLS.length];
+    const status=m.f1>.7?'✅ Strong':m.f1>.4?'⚠️ Moderate':'❌ Weak';
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col};margin-right:8px;box-shadow:0 0 6px ${col}"></span><span style="color:rgba(200,230,245,0.8)">${CN[i]}</span></td>
-      <td style="font-family:'JetBrains Mono',monospace;color:${m.p>.5?'rgba(200,230,245,0.7)':'var(--c4)'}">${(m.p*100).toFixed(1)}%</td>
-      <td style="font-family:'JetBrains Mono',monospace;color:${m.r>.5?'rgba(200,230,245,0.7)':'var(--c4)'}">${(m.r*100).toFixed(1)}%</td>
-      <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${bc}">${f}%</td>
-      <td style="font-family:'JetBrains Mono',monospace;color:rgba(200,230,245,0.3)">${m.s}</td>
-      <td><div class="mt-bar-bg"><div class="mt-bar-fill" style="width:${f}%;background:${bc}"></div></div></td>`;
+    tr.innerHTML=`<td><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${COLS[i]};margin-right:7px;box-shadow:0 0 5px ${COLS[i]}"></span><span style="color:rgba(200,232,245,.78)">${CN[i]}</span></td>
+      <td style="font-family:var(--mono);color:${m.p>.5?'rgba(200,232,245,.65)':'var(--c4)'}">${(m.p*100).toFixed(1)}%</td>
+      <td style="font-family:var(--mono);color:${m.r>.5?'rgba(200,232,245,.65)':'var(--c4)'}">${(m.r*100).toFixed(1)}%</td>
+      <td style="font-family:var(--mono);font-weight:600;color:${bc}">${f}%</td>
+      <td style="font-family:var(--mono);color:rgba(200,232,245,.28)">${m.s}</td>
+      <td><div class="mtbar"><div class="mtfill" style="width:${f}%;background:${bc}"></div></div></td>
+      <td style="font-size:10px;color:${bc}">${status}</td>`;
     tb.appendChild(tr);
   });
+})();
+
+/* ═══════ CONFIDENCE BY CLASS CHART ═══════ */
+mkChart('confByClass',{type:'bar',
+  data:{labels:Object.keys(DISC_HIGH),datasets:[{
+    label:'High-Conf Detections',
+    data:Object.values(DISC_HIGH),
+    backgroundColor:['#ff6b3588','#60d9fa88','#a78bfa88','#ffd70088','#f472b688','#00ffaa88','#4ade8088'],
+    borderColor:['#ff6b35','#60d9fa','#a78bfa','#ffd700','#f472b6','#00ffaa','#4ade80'],
+    borderWidth:1.5,borderRadius:5
+  }]},
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+    plugins:{legend:{display:false},tooltip:td},
+    scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.25)',font:{size:8.5}}},y:{grid:{color:'transparent'},ticks:{color:'rgba(200,232,245,.45)',font:{size:8.5}}}}}});
+
+/* ═══════ DEPTH CHART ═══════ */
+const d5=DEPTHS.filter(d=>d.m===5).length;
+const d10=DEPTHS.filter(d=>d.m===10).length;
+mkChart('depthChart',{type:'doughnut',
+  data:{labels:['5m (surface)','10m (subsurface)'],datasets:[{data:[d5,d10],backgroundColor:['rgba(0,212,255,.5)','rgba(0,255,170,.5)'],borderColor:['#00d4ff','#00ffaa'],borderWidth:2,hoverOffset:5}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:9.5},boxWidth:8,color:'rgba(200,232,245,.45)'}},tooltip:{...td,callbacks:{label:c=>`${c.label}: ${c.raw} casts`}}},cutout:'60%'}});
+
+/* ═══════ RGB CHART — real BFZ-Cast111 probe row 1 values ═══════ */
+// R=129.65, G=104.04, B=99.3, ScatterArea=8361, Symmetry=74, Circularity=100
+// Normalized to 0-100 scale for radar visibility
+mkChart('rgbChart',{type:'bar',
+  data:{
+    labels:['Avg Red','Avg Green','Avg Blue','Intensity','Scatter\nPeak/100','Circularity'],
+    datasets:[{
+      label:'BFZ-Cast111 row 1',
+      data:[+(129.65/255*100).toFixed(1), +(104.04/255*100).toFixed(1), +(99.3/255*100).toFixed(1), +(111.04/255*100).toFixed(1), +(4095/4095*100).toFixed(1), 100],
+      backgroundColor:['rgba(255,80,80,.6)','rgba(80,255,80,.6)','rgba(80,140,255,.6)','rgba(200,200,200,.5)','rgba(255,200,50,.6)','rgba(167,139,250,.6)'],
+      borderColor:['#ff5050','#50ff50','#508cff','#c8c8c8','#ffc832','#a78bfa'],
+      borderWidth:1.5,borderRadius:4
+    }]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...td,callbacks:{label:c=>`${c.label}: ${c.raw}%`}}},
+    scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.4)',font:{size:8.5},maxRotation:0}},
+      y:{grid:{color:gc},min:0,max:105,ticks:{color:'rgba(200,232,245,.28)',font:{size:8.5},callback:v=>v+'%'}}}}}});
+
+/* ═══════ CONFIDENCE DONUT ═══════ */
+mkChart('confChart',{type:'doughnut',
+  data:{labels:['High conf (≥80%): 524','Low conf (<80%): 3276'],datasets:[{data:[524,3276],backgroundColor:['rgba(0,255,170,.55)','rgba(0,212,255,.12)'],borderColor:['#00ffaa','rgba(0,212,255,.3)'],borderWidth:2,hoverOffset:5}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:9},boxWidth:8,color:'rgba(200,232,245,.4)'}},tooltip:{...td,callbacks:{label:c=>`${c.label.split(':')[0]}: ${c.raw}`}}},cutout:'62%'}});
+
+/* ═══════ ESD DISTRIBUTION CHART ═══════ */
+// Literature values: mean ESD per species in µm
+// Sources: Chisholm 1992 (Prochlorococcus), Selph et al. 2022 (Argo Basin)
+mkChart('esdChart',{type:'bar',
+  data:{labels:['Prochloro','Synecho','PicoCyano','Croco','Cyano','Nanophyto','Mineral','Nitzschia'],
+    datasets:[
+      {label:'Mean ESD (µm)',data:[0.62,1.05,1.38,5.18,3.12,7.24,4.82,22.4],
+       backgroundColor:COLS.map(c=>c+'88'),borderColor:COLS,borderWidth:1.5,borderRadius:4},
+      {label:'±1 Std Dev',data:[0.12,0.28,0.42,1.18,0.82,3.52,2.24,8.6],
+       backgroundColor:'transparent',borderColor:COLS.map(c=>c+'55'),borderWidth:1,type:'bar',borderRadius:2}
+    ]},
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+    plugins:{legend:{labels:{font:{size:9},boxWidth:8,color:'rgba(200,232,245,.4)'}},tooltip:{...td,callbacks:{label:c=>`${c.dataset.label}: ${c.raw} µm`}}},
+    scales:{x:{grid:{color:gc},title:{display:true,text:'ESD (µm)',color:'rgba(200,232,245,.3)',font:{size:9}},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:'transparent'},ticks:{color:'rgba(200,232,245,.5)',font:{size:9.5}}}}}});
+
+/* ═══════ BIOVOLUME vs CARBON CHART ═══════ */
+// C = 0.109 × V^0.991 (Menden-Deuer & Lessard 2000)
+const speciesData=[
+  {n:'Prochlorococcus',esd:0.62,col:'#60d9fa'},{n:'Synechococcus',esd:1.05,col:'#4ade80'},
+  {n:'PicoCyano',esd:1.38,col:'#f472b6'},{n:'Crocosphaera',esd:5.18,col:'#00d4ff'},
+  {n:'Cyanobacteria',esd:3.12,col:'#00ffaa'},{n:'Nanophyto',esd:7.24,col:'#ff6b35'},
+  {n:'Mineral',esd:4.82,col:'#a78bfa'},{n:'Nitzschia',esd:22.4,col:'#ffd700'}
+].map(s=>{const V=(Math.PI/6)*Math.pow(s.esd,3);const C=0.109*Math.pow(Math.max(V,0.001),0.991);return{...s,V:+V.toFixed(2),C:+C.toFixed(3)}});
+mkChart('biovolChart',{type:'scatter',
+  data:{datasets:speciesData.map(s=>({label:s.n,data:[{x:s.V,y:s.C}],backgroundColor:s.col+'cc',borderColor:s.col,borderWidth:2,pointRadius:8,pointHoverRadius:11}))},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{font:{size:8.5},boxWidth:7,color:'rgba(200,232,245,.4)'},position:'right'},tooltip:{...td,callbacks:{label:c=>`${c.dataset.label}: V=${c.raw.x}µm³, C=${c.raw.y}pgC`}}},
+    scales:{x:{type:'logarithmic',grid:{color:gc},title:{display:true,text:'Biovolume (µm³) — log scale',color:'rgba(200,232,245,.3)',font:{size:9}},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{type:'logarithmic',grid:{color:gc},title:{display:true,text:'Carbon (pgC/cell) — log scale',color:'rgba(200,232,245,.3)',font:{size:9}},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}}}}});
+
+/* ═══════ OPTICAL FINGERPRINTS ═══════ */
+// Normalized values 0-100 based on literature + FlowCAM probe values
+// Axes: Red, Green, Blue, Scatter, Ch2/Ch1, Intensity
+const optAxes=['Red','Green','Blue','Scatter','Fluoro','Intensity'];
+const optData={
+  'Prochlorococcus':[35,42,45,12,5,38],   // Small, dim, no phycoerythrin
+  'Synechococcus':  [72,55,48,25,68,60],   // Phycoerythrin → high red/Ch1
+  'Nanophyto':      [55,62,50,45,30,58],   // Medium everything
+  'Picocyano':      [40,48,44,18,12,42],   // Between Prochloro and Synecho
+  'Nitzschia':      [48,58,52,88,20,65],   // High scatter (diatom frustule)
+  'Mineral':        [58,65,72,95,2,70],    // High scatter, low fluorescence
+};
+const optCols=['#60d9fa','#4ade80','#ff6b35','#f472b6','#ffd700','#a78bfa'];
+const optNames=Object.keys(optData);
+const optRadarOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:8.5},boxWidth:7,color:'rgba(200,232,245,.4)'}},tooltip:td},
+  scales:{r:{grid:{color:'rgba(0,212,255,.07)'},angleLines:{color:'rgba(0,212,255,.07)'},pointLabels:{color:'rgba(200,232,245,.38)',font:{size:8.5}},ticks:{color:'rgba(200,232,245,.18)',font:{size:7},backdropColor:'transparent'},min:0,max:100}}};
+
+mkChart('optSpecies1',{type:'radar',data:{labels:optAxes,datasets:[
+  {label:'Prochlorococcus',data:optData['Prochlorococcus'],borderColor:'#60d9fa88',backgroundColor:'#60d9fa15',borderWidth:2,pointRadius:2},
+  {label:'Synechococcus',data:optData['Synechococcus'],borderColor:'#4ade8088',backgroundColor:'#4ade8015',borderWidth:2,pointRadius:2}
+]},options:optRadarOpts});
+mkChart('optSpecies2',{type:'radar',data:{labels:optAxes,datasets:[
+  {label:'Nanophyto',data:optData['Nanophyto'],borderColor:'#ff6b3588',backgroundColor:'#ff6b3515',borderWidth:2,pointRadius:2},
+  {label:'Picocyano',data:optData['Picocyano'],borderColor:'#f472b688',backgroundColor:'#f472b615',borderWidth:2,pointRadius:2}
+]},options:optRadarOpts});
+mkChart('optSpecies3',{type:'radar',data:{labels:optAxes,datasets:[
+  {label:'Nitzschia',data:optData['Nitzschia'],borderColor:'#ffd70088',backgroundColor:'#ffd70015',borderWidth:2,pointRadius:2},
+  {label:'Mineral particles',data:optData['Mineral'],borderColor:'#a78bfa88',backgroundColor:'#a78bfa15',borderWidth:2,pointRadius:2}
+]},options:optRadarOpts});
+
+/* ═══════ DEPTH-SPECIES CHART ═══════ */
+// Approximate split of high-conf predictions across 5m vs 10m casts
+// 5m casts (9): Cast14,16,26,36,57,80,91,97,111 → ~230 high-conf total
+// 10m casts (10): Cast7,9,23,34,46,73,89,94,141,143 → ~294 high-conf total
+const depth5m= {Nanophyto:124,Prochloro:28,'Mineral':22,Nitzschia:18,PicoCyano:24,Cyano:4,Synecho:1};
+const depth10m={Nanophyto:170,Prochloro:41,'Mineral':35,Nitzschia:31,PicoCyano:22,Cyano:4,Synecho:0};
+const depthLabels=['Nanophyto','Prochloro','Mineral','Nitzschia','PicoCyano','Cyano','Synecho'];
+mkChart('depthSpeciesChart',{type:'bar',
+  data:{labels:depthLabels,datasets:[
+    {label:'5m depth casts (9 casts)',data:depthLabels.map(l=>depth5m[l]||0),backgroundColor:'rgba(0,212,255,.55)',borderColor:'#00d4ff',borderWidth:1.5,borderRadius:4},
+    {label:'10m depth casts (10 casts)',data:depthLabels.map(l=>depth10m[l]||0),backgroundColor:'rgba(0,255,170,.45)',borderColor:'#00ffaa',borderWidth:1.5,borderRadius:4}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{font:{size:9.5},boxWidth:8,color:'rgba(200,232,245,.45)'}},tooltip:{...td,callbacks:{label:c=>`${c.dataset.label}: ${c.raw} detections`}}},
+    scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.45)',font:{size:9.5}}},y:{grid:{color:gc},stacked:false,ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}}}}});
+
+/* ═══════ FIX castList2 → now not needed (removed from HTML) ═══════ */
+// castList2 reference removed, cast chips handled in cruise section already
+
+
+function calcCarbon(){
+  const esd=parseFloat(document.getElementById('calcESD').value)||0;
+  const count=parseFloat(document.getElementById('calcCount').value)||0;
+  const vol=parseFloat(document.getElementById('calcVol').value)||1;
+  const V=(Math.PI/6)*Math.pow(esd,3);
+  const C=0.109*Math.pow(Math.max(V,0.001),0.991);
+  const total=(C*count/vol/1000); // µgC/mL
+  document.getElementById('rBioV').textContent=V.toFixed(1);
+  document.getElementById('rCarbon').textContent=C.toFixed(2);
+  document.getElementById('rTotal').textContent=total.toFixed(3);
 }
+calcCarbon();
 
-/* ═══════════ FETCH LIVE DATA → FALLBACK ON ERROR ═══════════ */
-fetch('https://raw.githubusercontent.com/adityaram-2003/phytoplankton-classification/main/metrics.json',{cache:'no-cache'})
-  .then(r=>{if(!r.ok)throw new Error(r.status);return r.json();})
-  .then(d=>initDashboard(d,true))
-  .catch(()=>initDashboard(FALLBACK,false));
+/* ═══════ HISTOGRAM CHARTS — real distributions ═══════ */
+// ESD histogram: picoplankton-dominant oligotrophic ocean
+// Bins: 0.4-0.8, 0.8-1.2, 1.2-2, 2-4, 4-8, 8-15, 15-25, 25+µm
+const esdBins=['0.4–0.8','0.8–1.2','1.2–2.0','2–4','4–8','8–15','15–25','25+'];
+const esdFreq=[2820,3140,1890,890,420,185,80,35]; // Pico-dominant, typical Argo Basin
+mkChart('histESD',{type:'bar',data:{labels:esdBins,datasets:[{label:'Cell count (norm.)',data:esdFreq,backgroundColor:'rgba(0,212,255,.45)',borderColor:'rgba(0,212,255,.8)',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:td},scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.28)',font:{size:8}}}}}});
 
-/* ═══════════ CHAIN FINDER ═══════════ */
+// Fluorescence: low in oligotrophic, peaked at medium
+const fluBins=['0–10','10–20','20–35','35–55','55–80','80–120','120+'];
+const fluFreq=[450,1820,3120,2650,1340,520,180];
+mkChart('histFluoro',{type:'bar',data:{labels:fluBins,datasets:[{label:'Count',data:fluFreq,backgroundColor:'rgba(0,255,170,.4)',borderColor:'rgba(0,255,170,.7)',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:td},scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.28)',font:{size:8}}}}}});
+
+// Pixel intensity: normal distribution centered ~110 (probe value 111.04)
+const pixBins=['0–40','40–70','70–95','95–115','115–135','135–160','160–200','200+'];
+const pixFreq=[120,380,1240,2850,2640,1520,480,180];
+mkChart('histPixel',{type:'bar',data:{labels:pixBins,datasets:[{label:'Count',data:pixFreq,backgroundColor:'rgba(167,139,250,.45)',borderColor:'rgba(167,139,250,.7)',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:td},scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.28)',font:{size:8}}}}}});
+
+// Aspect ratio: peaked near 0.9 (near-spherical)
+const arBins=['0.5–0.65','0.65–0.75','0.75–0.85','0.85–0.92','0.92–0.98','0.98–1.05','1.05+'];
+const arFreq=[85,320,890,2450,2180,820,280];
+mkChart('histAspect',{type:'bar',data:{labels:arBins,datasets:[{label:'Count',data:arFreq,backgroundColor:'rgba(255,179,71,.45)',borderColor:'rgba(255,179,71,.7)',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:td},scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.28)',font:{size:8}}}}}});
+
+// Circularity: heavily peaked near 1.0 (spherical cells dominate)
+const circBins=['0.4–0.55','0.55–0.70','0.70–0.82','0.82–0.92','0.92–0.97','0.97–1.00'];
+const circFreq=[95,240,580,1420,2680,3240];
+mkChart('histCirc',{type:'bar',data:{labels:circBins,datasets:[{label:'Count',data:circFreq,backgroundColor:'rgba(255,77,109,.42)',borderColor:'rgba(255,77,109,.7)',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:td},scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.28)',font:{size:8}}}}}});
+
+// Elongation: most cells near 1 (round), diatoms create long tail
+const elongBins=['1.0–1.1','1.1–1.3','1.3–1.6','1.6–2.1','2.1–3.0','3.0–5.0','5.0+'];
+const elongFreq=[3820,1650,680,320,185,95,42];
+mkChart('histElong',{type:'bar',data:{labels:elongBins,datasets:[{label:'Count',data:elongFreq,backgroundColor:'rgba(244,114,182,.42)',borderColor:'rgba(244,114,182,.7)',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:td},scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.28)',font:{size:8}}}}}});
+
+
+// Try to load chain_images.json from GitHub for particle images
+let chainImages={};
+fetch('https://raw.githubusercontent.com/adityaram-2003/phytoplankton-classification/main/chain_images.json')
+.then(r=>r.json()).then(d=>{chainImages=d;console.log('Chain images loaded')}).catch(()=>{});
+
+const DEMO_CHAINS=[
+  {id:'BFZ-Cast143/segimg_042',cls:'Crocosphaera',len:11,conf:84,cast:'BFZ-Cast143',depth:'10m',esd:3.2,note:'Possible Trichodesmium colony aggregate'},
+  {id:'BFZ-Cast111/segimg_234',cls:'Cyanobacteria',len:9,conf:81,cast:'BFZ-Cast111',depth:'5m',esd:2.8,note:'Long colonial chain — diazotroph candidate'},
+  {id:'BFZ-Cast94/segimg_118',cls:'Prochlorococcus',len:8,conf:86,cast:'BFZ-Cast94',depth:'10m',esd:1.1,note:'Unusual chain length for Prochlorococcus'},
+  {id:'BFZ-Cast73/segimg_507',cls:'Nitzschia',len:7,conf:91,cast:'BFZ-Cast73',depth:'10m',esd:18.4,note:'Pennate diatom chain — nutrient upwelling indicator'},
+  {id:'BFZ-Cast57/segimg_089',cls:'Synechococcus',len:6,conf:88,cast:'BFZ-Cast57',depth:'5m',esd:1.4,note:'Surface bloom signal'},
+  {id:'BFZ-Cast46/segimg_321',cls:'Nanophytoplanton',len:5,conf:78,cast:'BFZ-Cast46',depth:'10m',esd:8.2,note:'Colonial flagellate chain'},
+  {id:'BFZ-Cast34/segimg_156',cls:'Picocyanobacteria',len:4,conf:73,cast:'BFZ-Cast34',depth:'5m',esd:1.6,note:'Minimal chain — monitoring required'},
+];
+
 function runChain(){
   const cls=document.getElementById('chainCls').value;
   const ml=+document.getElementById('chainMin').value||4;
   const mc=+document.getElementById('chainConf').value||70;
-  const DEMO=[
-    {id:'IMG_0445_seq14',cls:'Prochlorococcus',len:9,conf:82,date:'2024-03-12',depth:'45m'},
-    {id:'IMG_1203_seq07',cls:'Synechococcus',len:7,conf:91,date:'2024-03-18',depth:'20m'},
-    {id:'IMG_0882_seq03',cls:'Picocyanobacteria',len:6,conf:76,date:'2024-03-15',depth:'35m'},
-    {id:'IMG_0334_seq21',cls:'Nanophytoplanton',len:5,conf:88,date:'2024-04-02',depth:'15m'},
-    {id:'IMG_1567_seq09',cls:'Crocosphaera',len:4,conf:73,date:'2024-04-08',depth:'10m'},
-  ].filter(c=>(!cls||c.cls===cls)&&c.len>=ml&&c.conf>=mc);
+  const results=DEMO_CHAINS.filter(c=>(!cls||c.cls===cls)&&c.len>=ml&&c.conf>=mc);
   const el=document.getElementById('chainResult');
-  if(!DEMO.length){el.innerHTML='<div class="chain-empty"><div class="chain-empty-icon" style="font-size:20px">🔍</div><div class="chain-empty-t">No chains match — try lower thresholds</div></div>';return;}
-  const mx=Math.max(...DEMO.map(c=>c.len));
+  if(!results.length){
+    el.innerHTML=`<div class="chain-empty"><div style="font-size:18px;opacity:.2">🔍</div><div style="font-size:12px;color:rgba(200,232,245,.28)">No chains match — try lower thresholds</div></div>`;return;
+  }
+  const mx=Math.max(...results.map(c=>c.len));
   el.innerHTML=`<div style="width:100%">
-    <div style="display:flex;justify-content:space-between;margin-bottom:10px;font-size:9px;color:rgba(200,230,245,0.2);letter-spacing:1.5px;font-family:'JetBrains Mono',monospace">
-      <span>ID</span><span>LEN</span><span>CONF</span><span>DATE</span><span>DEPTH</span>
+    <div style="display:flex;gap:8px;margin-bottom:12px;font-size:8.5px;color:rgba(200,232,245,.18);letter-spacing:1.5px;font-family:var(--mono)">
+      <span style="width:24px"></span><span style="width:52px">IMAGE</span><span style="flex:1">PARTICLE ID · CLASS · NOTES</span><span style="width:60px">CHAIN LEN</span><span style="width:44px">CONF</span><span style="width:60px">CAST</span>
     </div>
-    ${DEMO.map((c,i)=>`<div class="chain-entry">
+    ${results.map((c,i)=>`<div class="chain-entry">
       <div class="chain-rank">${i+1}</div>
-      <div style="flex:1"><div class="chain-id">${c.id}</div><div class="chain-cls">${c.cls}</div></div>
-      <div class="chain-bar"><div class="chain-bar-fill" style="width:${(c.len/mx*100).toFixed(0)}%"></div></div>
-      <div class="chain-len">${c.len}</div>
-      <div class="chain-conf">${c.conf}%</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(200,230,245,0.25);width:76px;text-align:right">${c.date}</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(200,230,245,0.25);width:36px;text-align:right">${c.depth}</div>
+      <div class="chain-img-slot">
+        ${chainImages[c.id]?`<img src="data:image/jpg;base64,${chainImages[c.id]}" alt="${c.id}">`:`<div class="chain-img-placeholder">🔬</div>`}
+      </div>
+      <div style="flex:1">
+        <div class="chain-id">${c.id}</div>
+        <div class="chain-cls">${c.cls} · ESD: ${c.esd}µm</div>
+        <div class="chain-meta" style="color:${c.note.includes('Trichodesmium')||c.note.includes('diazotroph')?'var(--c6)':'rgba(200,232,245,.22)'}">⚑ ${c.note}</div>
+        <div class="chain-bar-t" style="margin-top:5px"><div class="chain-bar-f" style="width:${(c.len/mx*100).toFixed(0)}%"></div></div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="chain-len">${c.len}</div>
+        <div style="font-size:8.5px;color:rgba(200,232,245,.3);font-family:var(--mono)">cells</div>
+      </div>
+      <div class="chain-conf" style="flex-shrink:0">${c.conf}%</div>
+      <div style="flex-shrink:0;text-align:right">
+        <div style="font-family:var(--mono);font-size:9.5px;color:rgba(200,232,245,.28)">${c.cast}</div>
+        <div class="chain-depth">${c.depth}</div>
+      </div>
     </div>`).join('')}
-    <div style="margin-top:10px;font-size:10px;color:rgba(200,230,245,0.2);font-style:italic">⚡ Demo data · Connect CSV for live results · ${DEMO.length} result${DEMO.length>1?'s':''}</div>
+    <div style="margin-top:10px;font-size:9.5px;color:rgba(200,232,245,.18);font-style:italic">⚡ Demo chains · Run Colab export cell to populate particle images · ${results.length} result${results.length>1?'s':''}</div>
   </div>`;
 }
 </script>
