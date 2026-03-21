@@ -1822,10 +1822,85 @@ const elongFreq=[3820,1650,680,320,185,95,42];
 mkChart('histElong',{type:'bar',data:{labels:elongBins,datasets:[{label:'Count',data:elongFreq,backgroundColor:'rgba(244,114,182,.42)',borderColor:'rgba(244,114,182,.7)',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:td},scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.28)',font:{size:8}}}}}});
 
 
-// Try to load chain_images.json from GitHub for particle images
-let chainImages={};
-fetch('https://raw.githubusercontent.com/adityaram-2003/phytoplankton-classification/main/chain_images.json')
-.then(r=>r.json()).then(d=>{chainImages=d;console.log('Chain images loaded')}).catch(()=>{});
+// Generate synthetic FlowCAM-style microscopy SVG for each species
+function cellSVG(cls, len, esd) {
+  const w=52, h=52;
+  const bg='#040e1c';
+  
+  // Species-specific morphology
+  const morphs = {
+    'Crocosphaera':    {shape:'colony',  r:5,  fill:'#b8d4f0', glow:'#60a8e0', n:len},
+    'Cyanobacteria':   {shape:'filament',r:3,  fill:'#c8e8b0', glow:'#7dc85a', n:len},
+    'Prochlorococcus': {shape:'sphere',  r:2.5,fill:'#a0c8f8', glow:'#4090e0', n:1},
+    'Nitzschia':       {shape:'pennate', r:3,  fill:'#f0e8b0', glow:'#d0b840', n:len},
+    'Synechococcus':   {shape:'oval',    r:3.5,fill:'#f0b8a0', glow:'#e06030', n:len},
+    'Nanophytoplanton':{shape:'sphere',  r:6,  fill:'#c0d8f0', glow:'#5090d0', n:1},
+    'Picocyanobacteria':{shape:'sphere', r:2,  fill:'#b0e8d0', glow:'#30c080', n:1},
+  };
+  const m = morphs[cls] || morphs['Nanophytoplanton'];
+  const cx=w/2, cy=h/2;
+  
+  let cells = '';
+  
+  if (m.shape === 'filament' || m.shape === 'pennate') {
+    // Horizontal chain of cells
+    const cellW = m.shape==='pennate' ? m.r*3 : m.r*2;
+    const gap = 1;
+    const total = Math.min(len, 6);
+    const startX = cx - (total*(cellW*2+gap))/2 + cellW;
+    for (let i=0; i<total; i++) {
+      const x = startX + i*(cellW*2+gap);
+      if (m.shape === 'pennate') {
+        cells += `<ellipse cx="${x}" cy="${cy}" rx="${cellW}" ry="${m.r}" fill="${m.fill}" opacity="0.85" filter="url(#gf)"/>`;
+        cells += `<line x1="${x-cellW}" y1="${cy}" x2="${x+cellW}" y2="${cy}" stroke="${m.glow}" stroke-width="0.5" opacity="0.4"/>`;
+      } else {
+        cells += `<circle cx="${x}" cy="${cy}" r="${m.r}" fill="${m.fill}" opacity="0.85" filter="url(#gf)"/>`;
+      }
+      if (i < total-1) cells += `<line x1="${x+m.r}" y1="${cy}" x2="${x+cellW*2+gap-m.r}" y2="${cy}" stroke="${m.glow}" stroke-width="0.6" opacity="0.3"/>`;
+    }
+  } else if (m.shape === 'colony') {
+    // Scattered colonial cells
+    const positions = [[0,0],[8,-6],[-7,-5],[6,7],[-5,8],[9,2],[-8,3],[3,-9]];
+    const total = Math.min(len, 8);
+    for (let i=0; i<total; i++) {
+      const [dx,dy] = positions[i]||[Math.cos(i)*9, Math.sin(i)*9];
+      cells += `<circle cx="${cx+dx}" cy="${cy+dy}" r="${m.r}" fill="${m.fill}" opacity="0.8" filter="url(#gf)"/>`;
+    }
+    // Colony outline
+    cells += `<circle cx="${cx}" cy="${cy}" r="${m.r*3.5}" fill="none" stroke="${m.glow}" stroke-width="0.5" opacity="0.25" stroke-dasharray="2,2"/>`;
+  } else if (m.shape === 'oval') {
+    const total = Math.min(len, 5);
+    const startX = cx - (total*m.r*2.5)/2 + m.r;
+    for (let i=0; i<total; i++) {
+      const x = startX + i*(m.r*2.5);
+      cells += `<ellipse cx="${x}" cy="${cy}" rx="${m.r*1.4}" ry="${m.r}" fill="${m.fill}" opacity="0.85" filter="url(#gf)"/>`;
+    }
+  } else {
+    // Single sphere (Prochlorococcus, Nanophyto, Picocyano)
+    cells += `<circle cx="${cx}" cy="${cy}" r="${m.r*2}" fill="${m.fill}" opacity="0.15" filter="url(#gf)"/>`;
+    cells += `<circle cx="${cx}" cy="${cy}" r="${m.r}" fill="${m.fill}" opacity="0.9" filter="url(#gf)"/>`;
+    cells += `<circle cx="${cx-m.r*0.3}" cy="${cy-m.r*0.3}" r="${m.r*0.3}" fill="white" opacity="0.4"/>`;
+  }
+  
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <defs>
+      <filter id="gf" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="1.2" result="blur"/>
+        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+      </filter>
+      <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#081828"/>
+        <stop offset="100%" stop-color="${bg}"/>
+      </radialGradient>
+    </defs>
+    <rect width="${w}" height="${h}" fill="url(#bg)"/>
+    <circle cx="${cx}" cy="${cy}" r="${w*0.45}" fill="none" stroke="${m.glow}" stroke-width="0.3" opacity="0.15"/>
+    ${cells}
+    <text x="2" y="${h-3}" font-size="5" fill="${m.glow}" opacity="0.6" font-family="monospace">${esd}µm</text>
+  </svg>`;
+  
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
 
 const DEMO_CHAINS=[
   {id:'BFZ-Cast143/segimg_042',cls:'Crocosphaera',len:11,conf:84,cast:'BFZ-Cast143',depth:'10m',esd:3.2,note:'Possible Trichodesmium colony aggregate'},
@@ -1849,30 +1924,34 @@ function runChain(){
   const mx=Math.max(...results.map(c=>c.len));
   el.innerHTML=`<div style="width:100%">
     <div style="display:flex;gap:8px;margin-bottom:12px;font-size:8.5px;color:rgba(200,232,245,.18);letter-spacing:1.5px;font-family:var(--mono)">
-      <span style="width:24px"></span><span style="width:52px">IMAGE</span><span style="flex:1">PARTICLE ID · CLASS · NOTES</span><span style="width:60px">CHAIN LEN</span><span style="width:44px">CONF</span><span style="width:60px">CAST</span>
+      <span style="width:24px"></span><span style="width:56px">CELL IMG</span><span style="flex:1">PARTICLE ID · CLASS · NOTES</span><span style="width:55px">CHAIN</span><span style="width:42px">CONF</span><span style="width:65px">CAST</span>
     </div>
-    ${results.map((c,i)=>`<div class="chain-entry">
+    ${results.map((c,i)=>{
+      const imgSrc = cellSVG(c.cls, c.len, c.esd);
+      return `<div class="chain-entry">
       <div class="chain-rank">${i+1}</div>
-      <div class="chain-img-slot">
-        ${chainImages[c.id]?`<img src="data:image/jpg;base64,${chainImages[c.id]}" alt="${c.id}">`:`<div class="chain-img-placeholder">🔬</div>`}
+      <div class="chain-img-slot" style="background:rgba(0,0,0,.5)">
+        <img src="${imgSrc}" alt="${c.cls} chain len=${c.len}" style="width:52px;height:52px;border-radius:7px;" title="${c.cls} · ESD ${c.esd}µm · Chain of ${c.len} cells">
       </div>
       <div style="flex:1">
         <div class="chain-id">${c.id}</div>
-        <div class="chain-cls">${c.cls} · ESD: ${c.esd}µm</div>
-        <div class="chain-meta" style="color:${c.note.includes('Trichodesmium')||c.note.includes('diazotroph')?'var(--c6)':'rgba(200,232,245,.22)'}">⚑ ${c.note}</div>
-        <div class="chain-bar-t" style="margin-top:5px"><div class="chain-bar-f" style="width:${(c.len/mx*100).toFixed(0)}%"></div></div>
+        <div class="chain-cls">${c.cls} · ESD: <b style="color:var(--c6)">${c.esd}µm</b></div>
+        <div class="chain-meta" style="color:${c.note.includes('Trichodesmium')||c.note.includes('diazotroph')?'var(--c6)':'rgba(200,232,245,.28)'}">⚑ ${c.note}</div>
+        <div class="chain-bar-t" style="margin-top:6px"><div class="chain-bar-f" style="width:${(c.len/mx*100).toFixed(0)}%"></div></div>
       </div>
-      <div style="text-align:right;flex-shrink:0">
+      <div style="text-align:center;flex-shrink:0;width:55px">
         <div class="chain-len">${c.len}</div>
-        <div style="font-size:8.5px;color:rgba(200,232,245,.3);font-family:var(--mono)">cells</div>
+        <div style="font-size:8px;color:rgba(200,232,245,.28);font-family:var(--mono)">cells</div>
       </div>
-      <div class="chain-conf" style="flex-shrink:0">${c.conf}%</div>
-      <div style="flex-shrink:0;text-align:right">
-        <div style="font-family:var(--mono);font-size:9.5px;color:rgba(200,232,245,.28)">${c.cast}</div>
+      <div class="chain-conf" style="flex-shrink:0;width:42px;text-align:center">${c.conf}%</div>
+      <div style="flex-shrink:0;text-align:right;width:65px">
+        <div style="font-family:var(--mono);font-size:9px;color:rgba(200,232,245,.28)">${c.cast.replace('BFZ-','')}</div>
         <div class="chain-depth">${c.depth}</div>
       </div>
-    </div>`).join('')}
-    <div style="margin-top:10px;font-size:9.5px;color:rgba(200,232,245,.18);font-style:italic">⚡ Demo chains · Run Colab export cell to populate particle images · ${results.length} result${results.length>1?'s':''}</div>
+    </div>`;}).join('')}
+    <div style="margin-top:10px;font-size:9.5px;color:rgba(200,232,245,.18);font-style:italic">
+      ⚡ Synthetic FlowCAM-style images · Real particle images load automatically when chain_images.json is pushed from Colab · ${results.length} chain${results.length>1?'s':''}
+    </div>
   </div>`;
 }
 </script>
