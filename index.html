@@ -6,6 +6,8 @@
 <title>Phytoplankton Classification — Goes Lab (LDEO)</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,300&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 /* ══════════════════════════════════════
    DESIGN TOKENS
@@ -409,20 +411,43 @@ body{font-family:var(--font);background:var(--ink);color:#c8e8f5;display:flex;mi
   font-size:9.5px;font-weight:700;color:var(--c1);font-family:var(--mono);margin-top:2px}
 
 /* Chain particle image */
-.chain-img-slot{width:84px;height:84px;border-radius:10px;background:rgba(0,0,0,.65);
-  border:1px solid rgba(0,212,255,.22);flex-shrink:0;display:flex;align-items:center;justify-content:center;
+/* Chain particle image — real FlowCAM crops have WHITE background */
+.chain-img-slot{
+  width:100px;height:100px;border-radius:10px;
+  background:#ffffff;  /* white bg — matches FlowCAM image bg */
+  border:2px solid rgba(0,212,255,.3);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
   overflow:hidden;position:relative;cursor:pointer;
-  transition:transform .25s cubic-bezier(.34,1.56,.64,1),border-color .25s,box-shadow .25s}
-.chain-img-slot:hover{transform:scale(1.06);border-color:rgba(0,212,255,.5);box-shadow:0 0 22px rgba(0,212,255,.3)}
-.chain-img-slot img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;filter:brightness(1.35) contrast(1.2)}
-.chain-img-placeholder{font-size:22px;opacity:.18}
-.ci-esd{position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:7px;color:rgba(0,212,255,.8);font-family:var(--mono);background:rgba(0,0,0,.65);padding:1px 0}
-.ci-live{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--c2);box-shadow:0 0 6px var(--c2);animation:pulse 2s infinite}
-/* Modal */
-#imgModal{display:none;position:fixed;inset:0;z-index:9990;background:rgba(0,0,0,.93);align-items:center;justify-content:center;cursor:pointer;flex-direction:column;gap:16px}
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1),border-color .25s,box-shadow .25s;
+  box-shadow:0 2px 12px rgba(0,0,0,.4);
+}
+.chain-img-slot:hover{transform:scale(1.05);border-color:rgba(0,212,255,.7);box-shadow:0 4px 24px rgba(0,212,255,.3)}
+.chain-img-slot img{width:100%;height:100%;object-fit:contain;image-rendering:auto;filter:none}
+.chain-img-placeholder{font-size:22px;opacity:.3}
+.ci-esd{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:8px;
+  color:#fff;font-family:var(--mono);background:rgba(0,0,0,.6);padding:2px 0;font-weight:600}
+.ci-live{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;
+  background:var(--c2);box-shadow:0 0 6px var(--c2);animation:pulse 2s infinite;
+  border:1px solid white}
+/* Modal — large, centered, proper size */
+#imgModal{display:none;position:fixed;inset:0;z-index:9990;
+  background:rgba(0,0,0,.92);align-items:center;justify-content:center;
+  cursor:pointer;flex-direction:column;gap:20px}
 #imgModal.open{display:flex}
-#imgModal img{max-width:80vw;max-height:75vh;border-radius:12px;border:1px solid rgba(0,212,255,.3);image-rendering:pixelated;filter:brightness(1.35) contrast(1.2);box-shadow:0 0 60px rgba(0,212,255,.2)}
-#imgModalInfo{background:rgba(3,12,25,.9);border:1px solid rgba(0,212,255,.2);border-radius:10px;padding:10px 20px;font-size:11px;color:rgba(200,232,245,.6);font-family:var(--mono)}
+#imgModal img{
+  width:auto;height:auto;
+  min-width:360px;min-height:360px;
+  max-width:70vw;max-height:70vh;
+  border-radius:8px;
+  border:2px solid rgba(0,212,255,.4);
+  image-rendering:auto;
+  filter:none;
+  box-shadow:0 0 80px rgba(0,0,0,.8);
+  background:#ffffff;
+}
+#imgModalInfo{background:rgba(3,12,25,.95);border:1px solid rgba(0,212,255,.25);
+  border-radius:10px;padding:12px 24px;font-size:11px;color:rgba(200,232,245,.7);
+  font-family:var(--mono);text-align:center}
 .chain-id{font-size:11.5px;font-weight:600;color:rgba(200,232,245,.82)}
 .chain-cls{font-size:10px;color:rgba(200,232,245,.32);margin-top:2px}
 .chain-meta{font-size:9.5px;color:rgba(200,232,245,.25);margin-top:3px;font-family:var(--mono)}
@@ -1134,85 +1159,8 @@ body{font-family:var(--font);background:var(--ink);color:#c8e8f5;display:flex;mi
   <div class="g65">
     <div class="g p">
       <div class="ct"><div class="cdot"></div>Eastern Indian Ocean — Argo Basin · 19 Cast Stations · Feb–Mar 2022</div>
-      <div style="position:relative;background:linear-gradient(180deg,rgba(1,12,24,.9),rgba(2,18,36,.8));border-radius:12px;overflow:hidden;border:1px solid rgba(0,212,255,.1)">
-        <!-- SVG Map of Eastern Indian Ocean / Argo Basin region -->
-        <svg viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
-          <!-- Grid lines -->
-          <defs>
-            <pattern id="mapgrid" width="33.33" height="26.67" patternUnits="userSpaceOnUse">
-              <path d="M 33.33 0 L 0 0 0 26.67" fill="none" stroke="rgba(0,212,255,0.04)" stroke-width="1"/>
-            </pattern>
-          </defs>
-          <rect width="600" height="320" fill="url(#mapgrid)"/>
-          <!-- Coastline approximation — NW Australia -->
-          <path d="M 520,220 L 540,240 L 555,270 L 565,300 L 580,320" fill="none" stroke="rgba(0,212,255,0.2)" stroke-width="1.5"/>
-          <!-- Indonesia approximate -->
-          <path d="M 0,80 L 30,70 L 80,60 L 130,55 L 180,58 L 220,65 L 260,70" fill="none" stroke="rgba(0,212,255,0.15)" stroke-width="1.5"/>
-          <!-- Lat/Lon labels -->
-          <text x="8" y="18" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">14°S</text>
-          <text x="8" y="88" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">18°S</text>
-          <text x="8" y="168" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">22°S</text>
-          <text x="8" y="248" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">26°S</text>
-          <text x="90" y="314" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">108°E</text>
-          <text x="230" y="314" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">113°E</text>
-          <text x="370" y="314" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">118°E</text>
-          <text x="490" y="314" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">122°E</text>
-          <!-- Cast track line -->
-          <polyline points="186,53 214,80 242,107 270,134 306,147 333,161 361,174 378,187 394,200 411,213 428,220 411,233 394,240 378,247 361,254 344,240 314,213 286,200 258,200 230,193 214,167 200,120" fill="none" stroke="rgba(0,212,255,0.15)" stroke-width="1" stroke-dasharray="4,4"/>
-          <!-- Cast dots — 19 positions in Argo Basin ~15-24°S, 109-121°E -->
-          <!-- Cast 7: -17.8°S, 112.4°E -->
-          <circle cx="186" cy="53" r="5" fill="#00d4ff" opacity="0.85"><animate attributeName="r" values="5;7;5" dur="2.5s" repeatCount="indefinite"/></circle>
-          <circle cx="186" cy="53" r="12" fill="none" stroke="#00d4ff" opacity="0.3"><animate attributeName="r" values="6;14;6" dur="2.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.3;0;0.3" dur="2.5s" repeatCount="indefinite"/></circle>
-          <!-- Cast 9: -18.5°S, 113.2°E -->
-          <circle cx="214" cy="80" r="5" fill="#00ffaa" opacity="0.85"><animate attributeName="r" values="5;7;5" dur="2.8s" begin="0.3s" repeatCount="indefinite"/></circle>
-          <!-- Cast 14: -19.2°S, 114.1°E -->
-          <circle cx="242" cy="107" r="5" fill="#00d4ff" opacity="0.85"/>
-          <!-- Cast 16: -20.1°S, 115.0°E -->
-          <circle cx="270" cy="134" r="5" fill="#a78bfa" opacity="0.85"/>
-          <!-- Cast 23: -21.2°S, 116.2°E -->
-          <circle cx="306" cy="147" r="5" fill="#00ffaa" opacity="0.85"/>
-          <!-- Cast 26: -22.0°S, 117.1°E -->
-          <circle cx="333" cy="161" r="5" fill="#00d4ff" opacity="0.85"/>
-          <!-- Cast 34: -22.8°S, 118.0°E -->
-          <circle cx="361" cy="174" r="5" fill="#ffb347" opacity="0.85"><animate attributeName="r" values="5;7;5" dur="3s" begin="0.6s" repeatCount="indefinite"/></circle>
-          <!-- Cast 36: -23.1°S, 118.6°E -->
-          <circle cx="378" cy="187" r="5" fill="#00ffaa" opacity="0.85"/>
-          <!-- Cast 46: -23.5°S, 117.5°E -->
-          <circle cx="394" cy="200" r="5" fill="#00d4ff" opacity="0.85"/>
-          <!-- Cast 57: -23.8°S, 116.4°E -->
-          <circle cx="411" cy="213" r="5" fill="#f472b6" opacity="0.85"/>
-          <!-- Cast 73: -24.0°S, 115.3°E -->
-          <circle cx="428" cy="220" r="5" fill="#00d4ff" opacity="0.85"><animate attributeName="r" values="5;7;5" dur="2.2s" begin="0.9s" repeatCount="indefinite"/></circle>
-          <!-- Cast 80: -23.6°S, 114.2°E -->
-          <circle cx="411" cy="233" r="5" fill="#a78bfa" opacity="0.85"/>
-          <!-- Cast 89: -22.9°S, 113.0°E -->
-          <circle cx="394" cy="240" r="5" fill="#00ffaa" opacity="0.85"/>
-          <!-- Cast 91: -21.8°S, 112.4°E -->
-          <circle cx="378" cy="247" r="5" fill="#00d4ff" opacity="0.85"/>
-          <!-- Cast 94: -20.9°S, 111.8°E -->
-          <circle cx="361" cy="254" r="5" fill="#ffb347" opacity="0.85"/>
-          <!-- Cast 97: -19.8°S, 111.2°E -->
-          <circle cx="344" cy="240" r="5" fill="#00d4ff" opacity="0.85"/>
-          <!-- Cast 111: -18.5°S, 110.9°E -->
-          <circle cx="314" cy="213" r="5" fill="#00ffaa" opacity="0.85"><animate attributeName="r" values="5;7;5" dur="3.2s" begin="1.2s" repeatCount="indefinite"/></circle>
-          <!-- Cast 141: -17.4°S, 112.0°E -->
-          <circle cx="286" cy="200" r="5" fill="#00d4ff" opacity="0.85"/>
-          <!-- Cast 143: -16.8°S, 113.5°E -->
-          <circle cx="258" cy="200" r="5" fill="#a78bfa" opacity="0.85"/>
-          <!-- Region label -->
-          <text x="60" y="260" fill="rgba(0,212,255,0.35)" font-size="10" font-family="JetBrains Mono">Argo Basin</text>
-          <text x="60" y="273" fill="rgba(0,212,255,0.25)" font-size="8.5" font-family="JetBrains Mono">Eastern Indian Ocean</text>
-          <!-- Australia label -->
-          <text x="510" y="215" fill="rgba(200,232,245,0.2)" font-size="9" font-family="JetBrains Mono">Australia</text>
-          <!-- N arrow -->
-          <text x="565" y="30" fill="rgba(0,212,255,0.4)" font-size="14">↑</text>
-          <text x="562" y="44" fill="rgba(0,212,255,0.3)" font-size="9" font-family="JetBrains Mono">N</text>
-        </svg>
-        <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:6px">
-          <div class="chip cc3" style="font-size:7px">R/V Roger Revelle · Feb–Mar 2022</div>
-          <div class="chip cc2" style="font-size:7px">19 CTD Casts · Argo Basin</div>
-        </div>
-      </div>
+      <!-- Leaflet real-world map -->
+      <div id="geoMap" style="height:380px;border-radius:12px;overflow:hidden;border:1px solid rgba(0,212,255,.2);position:relative;z-index:1"></div>
       <div style="display:flex;gap:14px;margin-top:10px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:rgba(200,232,245,.32)"><div style="width:6px;height:6px;border-radius:50%;background:var(--c1)"></div>5m depth casts</div>
         <div style="display:flex;align-items:center;gap:5px;font-size:10.5px;color:rgba(200,232,245,.32)"><div style="width:6px;height:6px;border-radius:50%;background:var(--c2)"></div>10m depth casts</div>
@@ -1231,8 +1179,6 @@ body{font-family:var(--font);background:var(--ink);color:#c8e8f5;display:flex;mi
           <div class="kvr"><span class="kvk">Lat range</span><span class="kvv">~17°S – 24°S</span></div>
           <div class="kvr"><span class="kvk">Lon range</span><span class="kvv">~110°E – 121°E</span></div>
           <div class="kvsep"></div>
-          <div class="kvr"><span class="kvk">Chief Scientist</span><span class="kvv">M. Landry (SIO)</span></div>
-          <div class="kvr"><span class="kvk">Goes Lab role</span><span class="kvv c2">FlowCAM · phytoplankton</span></div>
           <div class="kvr"><span class="kvk">Strategy</span><span class="kvv">Adaptive sampling</span></div>
         </div>
       </div>
@@ -1949,6 +1895,79 @@ function runChain(){
 
   wrap.innerHTML=html;
 }
+/* ═══════ LEAFLET MAP ═══════ */
+(function initMap() {
+  var mapEl = document.getElementById('geoMap');
+  if (!mapEl || typeof L === 'undefined') return;
+
+  // Dark tile layer — CartoDB Dark Matter
+  var map = L.map('geoMap', {
+    center: [-20.5, 115.5],
+    zoom: 5,
+    zoomControl: true,
+    attributionControl: true
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(map);
+
+  // Cast station data: [lat, lon, cast, depth, color]
+  var casts = [
+    [-17.8, 112.4, 'BFZ-Cast7',   '10m', '#00d4ff'],
+    [-18.5, 113.2, 'BFZ-Cast9',   '10m', '#00ffaa'],
+    [-19.2, 114.1, 'BFZ-Cast14',  '5m',  '#00d4ff'],
+    [-20.1, 115.0, 'BFZ-Cast16',  '5m',  '#a78bfa'],
+    [-21.2, 116.2, 'BFZ-Cast23',  '10m', '#00ffaa'],
+    [-22.0, 117.1, 'BFZ-Cast26',  '5m',  '#00d4ff'],
+    [-22.8, 118.0, 'BFZ-Cast34',  '10m', '#ffb347'],
+    [-23.1, 118.6, 'BFZ-Cast36',  '5m',  '#00ffaa'],
+    [-23.5, 117.5, 'BFZ-Cast46',  '10m', '#00d4ff'],
+    [-23.8, 116.4, 'BFZ-Cast57',  '5m',  '#f472b6'],
+    [-24.0, 115.3, 'BFZ-Cast73',  '10m', '#00d4ff'],
+    [-23.6, 114.2, 'BFZ-Cast80',  '5m',  '#a78bfa'],
+    [-22.9, 113.0, 'BFZ-Cast89',  '10m', '#00ffaa'],
+    [-21.8, 112.4, 'BFZ-Cast91',  '5m',  '#00d4ff'],
+    [-20.9, 111.8, 'BFZ-Cast94',  '10m', '#ffb347'],
+    [-19.8, 111.2, 'BFZ-Cast97',  '5m',  '#00d4ff'],
+    [-18.5, 110.9, 'BFZ-Cast111', '5m',  '#00ffaa'],
+    [-17.4, 112.0, 'BFZ-Cast141', '10m', '#00d4ff'],
+    [-16.8, 113.5, 'BFZ-Cast143', '10m', '#a78bfa'],
+  ];
+
+  // Draw cruise track line
+  var trackPoints = casts.map(function(c) { return [c[0], c[1]]; });
+  L.polyline(trackPoints, {
+    color: 'rgba(0,212,255,0.35)',
+    weight: 1.5,
+    dashArray: '5, 5'
+  }).addTo(map);
+
+  // Add markers
+  casts.forEach(function(c) {
+    var circleStyle = {
+      radius: 7,
+      fillColor: c[4],
+      color: '#fff',
+      weight: 1.5,
+      opacity: 0.9,
+      fillOpacity: 0.85
+    };
+    var marker = L.circleMarker([c[0], c[1]], circleStyle).addTo(map);
+    marker.bindPopup(
+      '<div style="font-family:JetBrains Mono,monospace;font-size:11px;color:#000;line-height:1.6">' +
+      '<b>' + c[2] + '</b><br>' +
+      'Depth: ' + c[3] + '<br>' +
+      'Lat: ' + c[0] + '&deg;S<br>' +
+      'Lon: ' + c[1] + '&deg;E' +
+      '</div>'
+    );
+  });
+})();
+
+
 </script>
 </body>
 </html>
