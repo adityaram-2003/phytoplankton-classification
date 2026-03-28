@@ -466,10 +466,12 @@ body{font-family:var(--font);background:var(--ink);color:#c8e8f5;display:flex;mi
 
 /* ════ STATION MODAL ════════════════════════════════════════════ */
 #stationModal{
-  display:none;position:fixed;inset:0;z-index:9999;
+  display:none;position:fixed;inset:0;z-index:99999;
   background:rgba(0,0,0,.85);backdrop-filter:blur(6px);
   align-items:center;justify-content:center;padding:20px;
+  cursor:default;
 }
+#stationModal *{cursor:default!important}
 #stationModal.open{display:flex}
 .sm-panel{
   width:min(960px,95vw);max-height:90vh;
@@ -2140,7 +2142,7 @@ function runChain(){
   // Add markers
   casts.forEach(function(c) {
     var circleStyle = {
-      radius: 7,
+      radius: 10,
       fillColor: c[4],
       color: '#fff',
       weight: 1.5,
@@ -2148,6 +2150,10 @@ function runChain(){
       fillOpacity: 0.85
     };
     var marker = L.circleMarker([c[0], c[1]], circleStyle).addTo(map);
+    // Make marker show pointer cursor
+    marker.getElement && marker.once('add', function(){
+      if(marker.getElement()) marker.getElement().style.cursor='pointer';
+    });
     marker.on('click', (function(castName){
       return function(){ openStationModal(castName); };
     })(c[2]));
