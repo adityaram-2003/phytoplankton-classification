@@ -1494,6 +1494,34 @@ body{font-family:var(--font);background:var(--ink);color:#c8e8f5;display:flex;mi
 
 </main>
 
+<!-- Station Detail Modal -->
+<div id="stationModal">
+  <div class="sm-panel">
+    <div class="sm-header">
+      <div>
+        <div class="sm-title" id="smTitle">Station</div>
+        <div class="sm-subtitle" id="smSubtitle"></div>
+      </div>
+      <div class="sm-close" onclick="closeStationModal()">&#x2715;</div>
+    </div>
+    <div class="sm-kpis" id="smKpis"></div>
+    <div class="sm-tabs">
+      <div class="sm-tab active" onclick="smTab(this,'overview')">Overview</div>
+      <div class="sm-tab" onclick="smTab(this,'species')">Species</div>
+      <div class="sm-tab" onclick="smTab(this,'biomass')">Carbon Biomass</div>
+      <div class="sm-tab" onclick="smTab(this,'environment')">Environment</div>
+      <div class="sm-tab" onclick="smTab(this,'biodiversity')">Biodiversity</div>
+    </div>
+    <div class="sm-body">
+      <div id="pane-overview"     class="sm-pane active"></div>
+      <div id="pane-species"      class="sm-pane"></div>
+      <div id="pane-biomass"      class="sm-pane"></div>
+      <div id="pane-environment"  class="sm-pane"></div>
+      <div id="pane-biodiversity" class="sm-pane"></div>
+    </div>
+  </div>
+</div>
+
 <!-- Image modal -->
 <div id="imgModal" onclick="this.classList.remove('open')">
   <img id="imgModalImg" src="" alt="">
@@ -2317,7 +2345,8 @@ function buildBiodiversityPane(s) {
   _smCharts.hBar = new Chart(document.getElementById('smHBar'),{type:'bar',data:{labels:stList4.map(function(st){return st.cast.replace('BFZ-Cast','C');}),datasets:[{label:"Shannon H&#39;",data:stList4.map(function(st){return st.biodiversity.shannon_H;}),backgroundColor:stList4.map(function(_,i){return i===castIdx4?'rgba(255,215,0,.85)':'rgba(255,215,0,.25)';}),borderColor:stList4.map(function(_,i){return i===castIdx4?'#ffd700':'rgba(255,215,0,.4)';}),borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{..._td,callbacks:{label:function(c){return " H'="+c.raw;}}}},scales:{x:{grid:{color:_gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:7.5}}},y:{grid:{color:_gc},min:0,max:2.2,ticks:{color:'rgba(200,232,245,.3)',font:{size:7.5}}}}}});
 }
 
-document.getElementById('stationModal').addEventListener('click',function(e){if(e.target===this)closeStationModal();});
+var _smBg = document.getElementById('stationModal');
+if(_smBg) _smBg.addEventListener('click',function(e){if(e.target===this)closeStationModal();});
 
 </script>
 </body>
