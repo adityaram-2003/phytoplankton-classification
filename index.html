@@ -457,6 +457,12 @@ body{font-family:var(--font);background:var(--ink);color:#c8e8f5;display:flex;mi
 .chain-conf{font-family:var(--mono);font-size:11px;color:var(--c2)}
 .chain-depth{font-family:var(--mono);font-size:10px;color:rgba(200,232,245,.28)}
 
+/* Histogram cards — white scientific background */
+.hist-wrap{background:#ffffff!important;border:1px solid #ddd!important;border-radius:8px!important}
+.hist-wrap .ct{color:#111!important}
+.hist-wrap .ct .cdot{background:#5b4fcf!important}
+.hist-wrap .chip{background:#f0f0f0!important;color:#333!important;border-color:#ccc!important}
+
 /* Bio callouts */
 .bio-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px}
 .bio-card{background:rgba(0,0,0,.25);border:1px solid rgba(0,212,255,.08);border-radius:9px;padding:13px}
@@ -1217,12 +1223,12 @@ body{font-family:var(--font);background:var(--ink);color:#c8e8f5;display:flex;mi
 <section class="sec fu d5" id="histo">
   <div class="sh">
     <div class="snum">13</div>
-    <div><div class="stitle">Feature Histograms</div><div class="ssub">Real BTR-1 FlowCAM data · 3,130 particles · BLOOFINZ-2022 Discrete Cast · Menden-Deuer columns</div></div>
+    <div><div class="stitle">Feature Histograms</div><div class="ssub">Real FlowCAM data · BTR-1 + BTR-3 + BTR-4 merged · 12,838 particles · BLOOFINZ-2022 Discrete Casts</div></div>
   </div>
   <div class="g3">
     <div class="g p gh tilt">
       <div class="ct"><div class="cdot"></div>Cell Size Distribution (ESD µm)</div>
-      <div class="ch ch140"><canvas id="histESD"></canvas></div>
+      <div class="ch ch140"><canvas id="histESD" style="background:#fff"></canvas></div>
       <div style="display:flex;justify-content:space-between;padding:6px 2px 0;font-size:9px;color:rgba(200,232,245,.22);font-family:var(--mono)">
         <span>0.4</span><span>1</span><span>3</span><span>7</span><span>15</span><span>25+µm</span>
       </div>
@@ -1759,43 +1765,78 @@ function calcCarbon(){
 }
 calcCarbon();
 
-/* ═══════ HISTOGRAM CHARTS — real distributions ═══════ */
-// ESD histogram: picoplankton-dominant oligotrophic ocean
-// Bins: 0.4-0.8, 0.8-1.2, 1.2-2, 2-4, 4-8, 8-15, 15-25, 25+µm
-// REAL BTR-1 data — 3,130 particles from BLOOFINZ-2022 discrete cast
-const esdBins=["0-10", "10-20", "20-30", "30-40", "40-50", "50-60", "60-70", "100-110"];
-const esdFreq=[2749, 260, 86, 24, 7, 1, 2, 1];
-mkChart('histESD',{type:'bar',data:{labels:esdBins,datasets:[{label:'Cell count (norm.)',data:esdFreq,backgroundColor:'rgba(0,212,255,.45)',borderColor:'rgba(0,212,255,.8)',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:td},scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.28)',font:{size:8}}}}}});
+/* ═══════ HISTOGRAM CHARTS — real BTR-1+3+4 data, 12,838 particles ═══════ */
 
-// Fluorescence: low in oligotrophic, peaked at medium
-// REAL BTR-1 Average Green channel (chlorophyll proxy) — 3,130 particles
-const fluBins=["<50", "50-70", "70-85", "85-100", "100-115", "115-130", "130-150", ">150"];
-const fluFreq=[0, 34, 301, 967, 1130, 551, 121, 26];
-mkChart('histFluoro',{type:'bar',data:{labels:fluBins,datasets:[{label:'Count',data:fluFreq,backgroundColor:'rgba(0,255,170,.4)',borderColor:'rgba(0,255,170,.7)',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:td},scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.28)',font:{size:8}}}}}});
+// Scientific white-background style matching Yeshitha's histogram output
+var histStyle = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: { backgroundColor: 'rgba(0,0,0,.85)', titleFont:{size:11}, bodyFont:{size:10},
+      callbacks: { label: function(c){ return ' Count: '+c.raw; } } }
+  },
+  scales: {
+    x: { grid: { color: 'rgba(0,0,0,.08)', lineWidth: 1 },
+         border: { color: '#333' },
+         ticks: { color: '#333', font: { size: 9.5, family: 'Arial' }, maxRotation: 0 } },
+    y: { grid: { color: 'rgba(0,0,0,.08)', lineWidth: 1 },
+         border: { color: '#333' },
+         ticks: { color: '#333', font: { size: 9.5, family: 'Arial' } },
+         title: { display: true, text: 'Number of Cells', color: '#333', font: { size: 10 } } }
+  },
+  layout: { padding: 8 }
+};
 
-// Pixel intensity: normal distribution centered ~110 (probe value 111.04)
-// REAL BTR-1 Intensity column — 3,130 particles
-const pixBins=["0-40", "40-70", "70-90", "90-110", "110-130", "130-155", "155-180", "180-220", ">220"];
-const pixFreq=[0, 23, 378, 1489, 1078, 147, 14, 1, 0];
-mkChart('histPixel',{type:'bar',data:{labels:pixBins,datasets:[{label:'Count',data:pixFreq,backgroundColor:'rgba(167,139,250,.45)',borderColor:'rgba(167,139,250,.7)',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:td},scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.28)',font:{size:8}}}}}});
+// Histogram container styling — white background scientific look
+document.querySelectorAll('.hist-chart-wrap').forEach(function(el){
+  el.style.background = '#ffffff';
+  el.style.borderRadius = '6px';
+  el.style.border = '1px solid #ddd';
+  el.style.padding = '10px 10px 4px';
+});
 
-// Aspect ratio: peaked near 0.9 (near-spherical)
-// REAL BTR-1 Aspect Ratio — 3,130 particles
-const arBins=["<0.3", "0.3-0.5", "0.5-0.65", "0.65-0.75", "0.75-0.85", "0.85-0.92", "0.92-0.98", "0.98-1.05", ">1.05"];
-const arFreq=[272, 373, 662, 640, 683, 372, 116, 12, 0];
-mkChart('histAspect',{type:'bar',data:{labels:arBins,datasets:[{label:'Count',data:arFreq,backgroundColor:'rgba(255,179,71,.45)',borderColor:'rgba(255,179,71,.7)',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:td},scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.28)',font:{size:8}}}}}});
+function mkHist(id, labels, data, color, xLabel) {
+  // Find grandparent card and make it white
+  var el2 = document.getElementById(id);
+  if(el2) {
+    var card = el2.closest('.g.p');
+    if(card) {
+      card.style.cssText += ';background:#ffffff!important;border:1px solid #ddd!important';
+      card.querySelectorAll('.ct,.chip,.cdot').forEach(function(e){
+        if(e.classList.contains('ct')) e.style.color='#222';
+        if(e.classList.contains('chip')) { e.style.background='#f0f0f0'; e.style.color='#444'; e.style.border='1px solid #ccc'; }
+      });
+    }
+  }
+  var el = document.getElementById(id);
+  if(!el) return;
+  // Set white background on parent
+  var wrap = el.closest('.g');
+  if(wrap) { wrap.style.background='#fff'; wrap.style.color='#111'; }
+  el.closest('.ch') && (el.closest('.ch').style.background='#fff');
+  
+  var opts = JSON.parse(JSON.stringify(histStyle));
+  opts.scales.x.title = { display: true, text: xLabel, color: '#333', font: { size: 10 } };
+  
+  new Chart(el, {
+    type: 'bar',
+    data: { labels: labels, datasets: [{
+      label: 'Count', data: data,
+      backgroundColor: color + 'cc',
+      borderColor: color,
+      borderWidth: 1.5,
+      borderRadius: 0  // sharp bars like scientific histogram
+    }]},
+    options: opts
+  });
+}
 
-// Circularity: heavily peaked near 1.0 (spherical cells dominate)
-// REAL BTR-1 Circularity — 3,130 particles
-const circBins=["<0.4", "0.4-0.55", "0.55-0.70", "0.70-0.82", "0.82-0.92", "0.92-0.97", "0.97-1.0"];
-const circFreq=[241, 143, 223, 338, 511, 295, 1379];
-mkChart('histCirc',{type:'bar',data:{labels:circBins,datasets:[{label:'Count',data:circFreq,backgroundColor:'rgba(255,77,109,.42)',borderColor:'rgba(255,77,109,.7)',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:td},scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.28)',font:{size:8}}}}}});
-
-// Elongation: most cells near 1 (round), diatoms create long tail
-// REAL BTR-1 Elongation — 3,130 particles
-const elongBins=["1.0-1.1", "1.1-1.3", "1.3-1.6", "1.6-2.1", "2.1-3.0", "3.0-5.0", ">5.0"];
-const elongFreq=[2319, 36, 75, 130, 144, 156, 236];
-mkChart('histElong',{type:'bar',data:{labels:elongBins,datasets:[{label:'Count',data:elongFreq,backgroundColor:'rgba(244,114,182,.42)',borderColor:'rgba(244,114,182,.7)',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:td},scales:{x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.28)',font:{size:8}}}}}});
+mkHist('histESD',    esdBins,  esdFreq,  '#5b4fcf', 'ESD Range (µm)');
+mkHist('histFluoro', fluBins,  fluFreq,  '#2e7d32', 'Average Green (chlorophyll proxy)');
+mkHist('histPixel',  pixBins,  pixFreq,  '#6a1b9a', 'Intensity (grayscale)');
+mkHist('histAspect', arBins,   arFreq,   '#c17900', 'Aspect Ratio');
+mkHist('histCirc',   circBins, circFreq, '#c62828', 'Circularity');
+mkHist('histElong',  elongBins,elongFreq,'#e91e8c', 'Elongation');
 
 
 // ─── Cell image preview (synthetic SVG until real images loaded) ──────────
