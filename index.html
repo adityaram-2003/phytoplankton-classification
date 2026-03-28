@@ -463,6 +463,94 @@ body{font-family:var(--font);background:var(--ink);color:#c8e8f5;display:flex;mi
 .hist-wrap .ct .cdot{background:#5b4fcf!important}
 .hist-wrap .chip{background:#f0f0f0!important;color:#333!important;border-color:#ccc!important}
 
+
+/* ════ STATION MODAL ════════════════════════════════════════════ */
+#stationModal{
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,.85);backdrop-filter:blur(6px);
+  align-items:center;justify-content:center;padding:20px;
+}
+#stationModal.open{display:flex}
+.sm-panel{
+  width:min(960px,95vw);max-height:90vh;
+  background:linear-gradient(135deg,rgba(3,14,28,.98),rgba(1,10,22,.98));
+  border:1px solid rgba(0,212,255,.25);border-radius:16px;
+  display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 0 60px rgba(0,212,255,.12),0 0 120px rgba(0,0,0,.8);
+}
+.sm-header{
+  padding:18px 24px 14px;
+  background:linear-gradient(90deg,rgba(0,212,255,.06),rgba(0,212,255,.02));
+  border-bottom:1px solid rgba(0,212,255,.12);
+  display:flex;align-items:flex-start;justify-content:space-between;flex-shrink:0;
+}
+.sm-title{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.3px}
+.sm-subtitle{font-size:10.5px;color:rgba(200,232,245,.4);font-family:var(--mono);margin-top:3px}
+.sm-close{
+  width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;color:rgba(200,232,245,.6);
+  transition:all .2s;flex-shrink:0;margin-left:12px;margin-top:-2px;
+}
+.sm-close:hover{background:rgba(255,60,60,.2);border-color:rgba(255,60,60,.3);color:#fff}
+.sm-kpis{
+  display:grid;grid-template-columns:repeat(6,1fr);gap:10px;
+  padding:14px 24px;border-bottom:1px solid rgba(0,212,255,.08);flex-shrink:0;
+}
+.sm-kpi{background:rgba(0,0,0,.3);border:1px solid rgba(0,212,255,.1);border-radius:8px;padding:8px 10px;text-align:center}
+.sm-kpi-val{font-size:16px;font-weight:700;font-family:var(--mono);color:var(--c1);line-height:1}
+.sm-kpi-lbl{font-size:8.5px;color:rgba(200,232,245,.35);margin-top:3px;letter-spacing:.5px}
+.sm-tabs{
+  display:flex;gap:4px;padding:12px 24px 0;flex-shrink:0;
+  border-bottom:1px solid rgba(0,212,255,.08);
+}
+.sm-tab{
+  padding:7px 14px;border-radius:8px 8px 0 0;font-size:10.5px;font-weight:600;
+  cursor:pointer;color:rgba(200,232,245,.4);border:1px solid transparent;
+  border-bottom:none;transition:all .2s;letter-spacing:.3px;
+}
+.sm-tab:hover{color:rgba(200,232,245,.7);background:rgba(0,212,255,.05)}
+.sm-tab.active{
+  color:#fff;background:rgba(0,212,255,.1);
+  border-color:rgba(0,212,255,.2);border-bottom-color:rgba(3,14,28,.98);
+  margin-bottom:-1px;
+}
+.sm-body{flex:1;overflow-y:auto;padding:20px 24px;min-height:0}
+.sm-pane{display:none}.sm-pane.active{display:block}
+.sm-grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.sm-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
+.sm-card{
+  background:rgba(0,0,0,.35);border:1px solid rgba(0,212,255,.1);
+  border-radius:10px;padding:14px;
+}
+.sm-card-title{font-size:10px;font-weight:700;color:rgba(200,232,245,.5);
+  letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.sm-ch{position:relative}
+.sm-ch-100{height:100px}
+.sm-ch-160{height:160px}
+.sm-ch-200{height:200px}
+.bio-index{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:7px 0;border-bottom:1px solid rgba(0,212,255,.06);
+}
+.bio-index:last-child{border-bottom:none}
+.bio-name{font-size:10px;color:rgba(200,232,245,.5);font-family:var(--mono)}
+.bio-val{font-size:13px;font-weight:700;color:var(--c1);font-family:var(--mono)}
+.bio-bar-wrap{height:4px;background:rgba(0,212,255,.07);border-radius:99px;width:80px;margin:0 10px}
+.bio-bar{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--c1),var(--c2))}
+.env-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.env-metric{background:rgba(0,0,0,.3);border:1px solid rgba(0,212,255,.08);border-radius:8px;padding:10px;text-align:center}
+.env-val{font-size:18px;font-weight:700;font-family:var(--mono);color:var(--c1)}
+.env-unit{font-size:8px;color:rgba(200,232,245,.35);margin-left:2px}
+.env-lbl{font-size:9px;color:rgba(200,232,245,.3);margin-top:3px}
+.sp-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(0,212,255,.05)}
+.sp-row:last-child{border-bottom:none}
+.sp-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sp-name{font-size:10.5px;color:rgba(200,232,245,.65);flex:1;font-family:var(--mono)}
+.sp-pct{font-size:10px;font-weight:700;font-family:var(--mono);color:rgba(200,232,245,.85);width:38px;text-align:right}
+.sp-bar-bg{flex:1;height:5px;background:rgba(0,212,255,.07);border-radius:99px;overflow:hidden;max-width:80px}
+.sp-bar-fg{height:100%;border-radius:99px}
+
 /* Bio callouts */
 .bio-strip{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px}
 .bio-card{background:rgba(0,0,0,.25);border:1px solid rgba(0,212,255,.08);border-radius:9px;padding:13px}
@@ -513,6 +601,10 @@ body{font-family:var(--font);background:var(--ink);color:#c8e8f5;display:flex;mi
 .fu{animation:fadeUp .55s cubic-bezier(.22,1,.36,1) forwards;opacity:0}
 .d1{animation-delay:.04s}.d2{animation-delay:.1s}.d3{animation-delay:.18s}
 .d4{animation-delay:.26s}.d5{animation-delay:.36s}.d6{animation-delay:.48s}
+</style>
+<style>
+.leaflet-tooltip-dark{background:rgba(3,12,25,.95)!important;border:1px solid rgba(0,212,255,.3)!important;color:rgba(200,232,245,.85)!important;font-family:JetBrains Mono,monospace!important;font-size:10px!important;box-shadow:0 4px 16px rgba(0,0,0,.5)!important;border-radius:6px!important}
+.leaflet-tooltip-dark.leaflet-tooltip-top:before{border-top-color:rgba(0,212,255,.3)!important}
 </style>
 </head>
 <body>
@@ -2028,18 +2120,12 @@ function runChain(){
       fillOpacity: 0.85
     };
     var marker = L.circleMarker([c[0], c[1]], circleStyle).addTo(map);
-    var env = castEnv[c[2]] || {};
-    marker.bindPopup(
-      '<div style="font-family:monospace;font-size:11px;line-height:1.8;min-width:160px;padding:4px">' +
-      '<b style="font-size:12px">' + c[2] + '</b><br>' +
-      '<span style="color:#555">📅 ' + (c[5]||'') + ' &nbsp; ⬇️ ' + c[3] + '</span><br>' +
-      '<span style="color:#555">📍 ' + Math.abs(c[0]).toFixed(3) + '°S, ' + c[1].toFixed(3) + '°E</span><br>' +
-      (env.sst ? '<hr style="margin:3px 0;border-color:#ddd">' +
-      '🌡️ SST: <b>' + env.sst + '°C</b><br>' +
-      '🧂 Salinity: <b>' + env.sal + ' PSU</b><br>' +
-      '🌿 Fluorescence: <b>' + env.fluoro + '</b>' : '') +
-      '</div>'
-    );
+    marker.on('click', (function(castName){
+      return function(){ openStationModal(castName); };
+    })(c[2]));
+    marker.bindTooltip(c[2].replace('BFZ-','') + ' \u00b7 ' + c[3], {
+      direction:'top', offset:[0,-8], className:'leaflet-tooltip-dark'
+    });
   });
 })();
 
@@ -2103,6 +2189,135 @@ function runChain(){
   });
 })();
 
+
+
+/* STATION DATA */
+var STATION_DATA = {"BFZ-Cast7": {"cast": "BFZ-Cast7", "lat": -14.0042, "lon": 114.3626, "depth": "10m", "date": "2022-02-02", "sst": 29.45, "sal": 34.28, "fluoro": 0.001, "par": 758.0, "wind_speed": 8.8, "oxygen": 4.206, "species_pct": {"Nanophytoplankton": 50.1, "Prochlorococcus": 16.9, "Mineral particles": 12.3, "Nitzschia": 11.6, "Picocyanobacteria": 5.0, "Cyanobacteria": 2.6, "Synechococcus": 1.0, "Crocosphaera": 0.5}, "species_counts": {"Nanophytoplankton": 97, "Prochlorococcus": 33, "Mineral particles": 24, "Nitzschia": 22, "Picocyanobacteria": 10, "Cyanobacteria": 5, "Synechococcus": 2, "Crocosphaera": 1}, "n_particles": 193, "biodiversity": {"shannon_H": 1.471, "simpson_D": 0.688, "pielou_J": 0.707, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 50.1}, "carbon_by_class": {"Nanophytoplankton": 2003.22, "Prochlorococcus": 0.457, "Mineral particles": 147.865, "Nitzschia": 13051.613, "Picocyanobacteria": 1.496, "Cyanobacteria": 8.454, "Synechococcus": 0.133, "Crocosphaera": 7.632}, "total_carbon_pg": 15220.87, "esd_dist": {"0-10": 84, "10-20": 11, "20-30": 3, "30-40": 2}}, "BFZ-Cast9": {"cast": "BFZ-Cast9", "lat": -15.3442, "lon": 114.5837, "depth": "10m", "date": "2022-02-03", "sst": 28.5, "sal": 34.47, "fluoro": 0.038, "par": 1128.4, "wind_speed": 8.2, "oxygen": 4.173, "species_pct": {"Nanophytoplankton": 50.1, "Prochlorococcus": 16.9, "Mineral particles": 12.3, "Nitzschia": 11.6, "Picocyanobacteria": 5.0, "Cyanobacteria": 2.6, "Synechococcus": 1.0, "Crocosphaera": 0.5}, "species_counts": {"Nanophytoplankton": 120, "Prochlorococcus": 41, "Mineral particles": 30, "Nitzschia": 28, "Picocyanobacteria": 12, "Cyanobacteria": 6, "Synechococcus": 2, "Crocosphaera": 1}, "n_particles": 240, "biodiversity": {"shannon_H": 1.471, "simpson_D": 0.688, "pielou_J": 0.707, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 50.1}, "carbon_by_class": {"Nanophytoplankton": 2478.21, "Prochlorococcus": 0.568, "Mineral particles": 184.831, "Nitzschia": 16611.143, "Picocyanobacteria": 1.795, "Cyanobacteria": 10.144, "Synechococcus": 0.133, "Crocosphaera": 7.632}, "total_carbon_pg": 19294.46, "esd_dist": {"0-10": 84, "10-20": 11, "20-30": 3, "30-40": 2}}, "BFZ-Cast14": {"cast": "BFZ-Cast14", "lat": -15.3636, "lon": 114.3522, "depth": "5m", "date": "2022-02-05", "sst": 28.42, "sal": 34.49, "fluoro": 0.049, "par": 748.4, "wind_speed": 7.6, "oxygen": 4.093, "species_pct": {"Nanophytoplankton": 61.9, "Prochlorococcus": 9.5, "Mineral particles": 9.4, "Nitzschia": 7.2, "Picocyanobacteria": 6.8, "Cyanobacteria": 2.9, "Synechococcus": 1.6, "Crocosphaera": 0.7}, "species_counts": {"Nanophytoplankton": 163, "Prochlorococcus": 25, "Mineral particles": 25, "Nitzschia": 19, "Picocyanobacteria": 18, "Cyanobacteria": 8, "Synechococcus": 4, "Crocosphaera": 2}, "n_particles": 264, "biodiversity": {"shannon_H": 1.318, "simpson_D": 0.588, "pielou_J": 0.634, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 61.9}, "carbon_by_class": {"Nanophytoplankton": 3366.235, "Prochlorococcus": 0.346, "Mineral particles": 154.026, "Nitzschia": 11271.847, "Picocyanobacteria": 2.692, "Cyanobacteria": 13.526, "Synechococcus": 0.265, "Crocosphaera": 15.265}, "total_carbon_pg": 14824.2, "esd_dist": {"0-10": 87, "10-20": 9, "20-30": 3, "30-40": 1}}, "BFZ-Cast16": {"cast": "BFZ-Cast16", "lat": -15.4533, "lon": 114.1949, "depth": "5m", "date": "2022-02-06", "sst": 28.45, "sal": 34.42, "fluoro": 0.04, "par": 676.1, "wind_speed": 4.8, "oxygen": 4.078, "species_pct": {"Nanophytoplankton": 61.9, "Prochlorococcus": 9.5, "Mineral particles": 9.4, "Nitzschia": 7.2, "Picocyanobacteria": 6.8, "Cyanobacteria": 2.9, "Synechococcus": 1.6, "Crocosphaera": 0.7}, "species_counts": {"Nanophytoplankton": 182, "Prochlorococcus": 28, "Mineral particles": 28, "Nitzschia": 21, "Picocyanobacteria": 20, "Cyanobacteria": 8, "Synechococcus": 5, "Crocosphaera": 2}, "n_particles": 294, "biodiversity": {"shannon_H": 1.318, "simpson_D": 0.588, "pielou_J": 0.634, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 61.9}, "carbon_by_class": {"Nanophytoplankton": 3758.619, "Prochlorococcus": 0.388, "Mineral particles": 172.509, "Nitzschia": 12458.357, "Picocyanobacteria": 2.991, "Cyanobacteria": 13.526, "Synechococcus": 0.332, "Crocosphaera": 15.265}, "total_carbon_pg": 16421.99, "esd_dist": {"0-10": 87, "10-20": 9, "20-30": 3, "30-40": 1}}, "BFZ-Cast23": {"cast": "BFZ-Cast23", "lat": -15.5908, "lon": 114.1282, "depth": "10m", "date": "2022-02-07", "sst": 28.59, "sal": 34.49, "fluoro": 0.044, "par": 1213.6, "wind_speed": 5.8, "oxygen": 4.061, "species_pct": {"Nanophytoplankton": 50.1, "Prochlorococcus": 16.9, "Mineral particles": 12.3, "Nitzschia": 11.6, "Picocyanobacteria": 5.0, "Cyanobacteria": 2.6, "Synechococcus": 1.0, "Crocosphaera": 0.5}, "species_counts": {"Nanophytoplankton": 109, "Prochlorococcus": 37, "Mineral particles": 27, "Nitzschia": 25, "Picocyanobacteria": 11, "Cyanobacteria": 6, "Synechococcus": 2, "Crocosphaera": 1}, "n_particles": 218, "biodiversity": {"shannon_H": 1.471, "simpson_D": 0.688, "pielou_J": 0.707, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 50.1}, "carbon_by_class": {"Nanophytoplankton": 2251.041, "Prochlorococcus": 0.513, "Mineral particles": 166.348, "Nitzschia": 14831.378, "Picocyanobacteria": 1.645, "Cyanobacteria": 10.144, "Synechococcus": 0.133, "Crocosphaera": 7.632}, "total_carbon_pg": 17268.83, "esd_dist": {"0-10": 84, "10-20": 11, "20-30": 3, "30-40": 2}}, "BFZ-Cast26": {"cast": "BFZ-Cast26", "lat": -16.9539, "lon": 115.8064, "depth": "5m", "date": "2022-02-09", "sst": 28.32, "sal": 34.67, "fluoro": 0.051, "par": 1005.1, "wind_speed": 6.4, "oxygen": 4.074, "species_pct": {"Nanophytoplankton": 61.9, "Prochlorococcus": 9.5, "Mineral particles": 9.4, "Nitzschia": 7.2, "Picocyanobacteria": 6.8, "Cyanobacteria": 2.9, "Synechococcus": 1.6, "Crocosphaera": 0.7}, "species_counts": {"Nanophytoplankton": 180, "Prochlorococcus": 28, "Mineral particles": 27, "Nitzschia": 21, "Picocyanobacteria": 20, "Cyanobacteria": 8, "Synechococcus": 5, "Crocosphaera": 2}, "n_particles": 290, "biodiversity": {"shannon_H": 1.318, "simpson_D": 0.588, "pielou_J": 0.634, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 61.9}, "carbon_by_class": {"Nanophytoplankton": 3717.315, "Prochlorococcus": 0.388, "Mineral particles": 166.348, "Nitzschia": 12458.357, "Picocyanobacteria": 2.991, "Cyanobacteria": 13.526, "Synechococcus": 0.332, "Crocosphaera": 15.265}, "total_carbon_pg": 16374.52, "esd_dist": {"0-10": 87, "10-20": 9, "20-30": 3, "30-40": 1}}, "BFZ-Cast34": {"cast": "BFZ-Cast34", "lat": -16.7632, "lon": 115.7805, "depth": "10m", "date": "2022-02-10", "sst": 28.93, "sal": 34.74, "fluoro": 0.036, "par": 1164.7, "wind_speed": 3.8, "oxygen": 4.077, "species_pct": {"Nanophytoplankton": 50.1, "Prochlorococcus": 16.9, "Mineral particles": 12.3, "Nitzschia": 11.6, "Picocyanobacteria": 5.0, "Cyanobacteria": 2.6, "Synechococcus": 1.0, "Crocosphaera": 0.5}, "species_counts": {"Nanophytoplankton": 112, "Prochlorococcus": 38, "Mineral particles": 28, "Nitzschia": 26, "Picocyanobacteria": 11, "Cyanobacteria": 6, "Synechococcus": 2, "Crocosphaera": 1}, "n_particles": 224, "biodiversity": {"shannon_H": 1.471, "simpson_D": 0.688, "pielou_J": 0.707, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 50.1}, "carbon_by_class": {"Nanophytoplankton": 2312.996, "Prochlorococcus": 0.527, "Mineral particles": 172.509, "Nitzschia": 15424.633, "Picocyanobacteria": 1.645, "Cyanobacteria": 10.144, "Synechococcus": 0.133, "Crocosphaera": 7.632}, "total_carbon_pg": 17930.22, "esd_dist": {"0-10": 84, "10-20": 11, "20-30": 3, "30-40": 2}}, "BFZ-Cast36": {"cast": "BFZ-Cast36", "lat": -16.8764, "lon": 115.9437, "depth": "5m", "date": "2022-02-11", "sst": 28.84, "sal": 34.8, "fluoro": 0.026, "par": 1179.0, "wind_speed": 5.0, "oxygen": 4.061, "species_pct": {"Nanophytoplankton": 61.9, "Prochlorococcus": 9.5, "Mineral particles": 9.4, "Nitzschia": 7.2, "Picocyanobacteria": 6.8, "Cyanobacteria": 2.9, "Synechococcus": 1.6, "Crocosphaera": 0.7}, "species_counts": {"Nanophytoplankton": 129, "Prochlorococcus": 20, "Mineral particles": 20, "Nitzschia": 15, "Picocyanobacteria": 14, "Cyanobacteria": 6, "Synechococcus": 3, "Crocosphaera": 1}, "n_particles": 208, "biodiversity": {"shannon_H": 1.318, "simpson_D": 0.588, "pielou_J": 0.634, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 61.9}, "carbon_by_class": {"Nanophytoplankton": 2664.076, "Prochlorococcus": 0.277, "Mineral particles": 123.221, "Nitzschia": 8898.827, "Picocyanobacteria": 2.094, "Cyanobacteria": 10.144, "Synechococcus": 0.199, "Crocosphaera": 7.632}, "total_carbon_pg": 11706.47, "esd_dist": {"0-10": 87, "10-20": 9, "20-30": 3, "30-40": 1}}, "BFZ-Cast46": {"cast": "BFZ-Cast46", "lat": -17.0446, "lon": 116.0764, "depth": "10m", "date": "2022-02-13", "sst": 28.72, "sal": 34.8, "fluoro": 0.048, "par": 1247.5, "wind_speed": 5.8, "oxygen": 3.955, "species_pct": {"Nanophytoplankton": 50.1, "Prochlorococcus": 16.9, "Mineral particles": 12.3, "Nitzschia": 11.6, "Picocyanobacteria": 5.0, "Cyanobacteria": 2.6, "Synechococcus": 1.0, "Crocosphaera": 0.5}, "species_counts": {"Nanophytoplankton": 117, "Prochlorococcus": 39, "Mineral particles": 29, "Nitzschia": 27, "Picocyanobacteria": 12, "Cyanobacteria": 6, "Synechococcus": 2, "Crocosphaera": 1}, "n_particles": 233, "biodiversity": {"shannon_H": 1.471, "simpson_D": 0.688, "pielou_J": 0.707, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 50.1}, "carbon_by_class": {"Nanophytoplankton": 2416.255, "Prochlorococcus": 0.541, "Mineral particles": 178.67, "Nitzschia": 16017.888, "Picocyanobacteria": 1.795, "Cyanobacteria": 10.144, "Synechococcus": 0.133, "Crocosphaera": 7.632}, "total_carbon_pg": 18633.06, "esd_dist": {"0-10": 84, "10-20": 11, "20-30": 3, "30-40": 2}}, "BFZ-Cast57": {"cast": "BFZ-Cast57", "lat": -16.0102, "lon": 115.5986, "depth": "5m", "date": "2022-02-14", "sst": 29.85, "sal": 34.51, "fluoro": 0.082, "par": 1265.4, "wind_speed": 3.2, "oxygen": 3.946, "species_pct": {"Nanophytoplankton": 61.9, "Prochlorococcus": 9.5, "Mineral particles": 9.4, "Nitzschia": 7.2, "Picocyanobacteria": 6.8, "Cyanobacteria": 2.9, "Synechococcus": 1.6, "Crocosphaera": 0.7}, "species_counts": {"Nanophytoplankton": 143, "Prochlorococcus": 22, "Mineral particles": 22, "Nitzschia": 17, "Picocyanobacteria": 16, "Cyanobacteria": 7, "Synechococcus": 4, "Crocosphaera": 2}, "n_particles": 231, "biodiversity": {"shannon_H": 1.318, "simpson_D": 0.588, "pielou_J": 0.634, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 61.9}, "carbon_by_class": {"Nanophytoplankton": 2953.2, "Prochlorococcus": 0.305, "Mineral particles": 135.543, "Nitzschia": 10085.337, "Picocyanobacteria": 2.393, "Cyanobacteria": 11.835, "Synechococcus": 0.265, "Crocosphaera": 15.265}, "total_carbon_pg": 13204.14, "esd_dist": {"0-10": 87, "10-20": 9, "20-30": 3, "30-40": 1}}, "BFZ-Cast73": {"cast": "BFZ-Cast73", "lat": -15.9403, "lon": 115.828, "depth": "10m", "date": "2022-02-15", "sst": 29.73, "sal": 34.51, "fluoro": 0.024, "par": 967.6, "wind_speed": 4.1, "oxygen": 3.925, "species_pct": {"Nanophytoplankton": 50.1, "Prochlorococcus": 16.9, "Mineral particles": 12.3, "Nitzschia": 11.6, "Picocyanobacteria": 5.0, "Cyanobacteria": 2.6, "Synechococcus": 1.0, "Crocosphaera": 0.5}, "species_counts": {"Nanophytoplankton": 103, "Prochlorococcus": 35, "Mineral particles": 25, "Nitzschia": 24, "Picocyanobacteria": 10, "Cyanobacteria": 5, "Synechococcus": 2, "Crocosphaera": 1}, "n_particles": 206, "biodiversity": {"shannon_H": 1.471, "simpson_D": 0.688, "pielou_J": 0.707, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 50.1}, "carbon_by_class": {"Nanophytoplankton": 2127.13, "Prochlorococcus": 0.485, "Mineral particles": 154.026, "Nitzschia": 14238.123, "Picocyanobacteria": 1.496, "Cyanobacteria": 8.454, "Synechococcus": 0.133, "Crocosphaera": 7.632}, "total_carbon_pg": 16537.48, "esd_dist": {"0-10": 84, "10-20": 11, "20-30": 3, "30-40": 2}}, "BFZ-Cast80": {"cast": "BFZ-Cast80", "lat": -15.8426, "lon": 115.8456, "depth": "5m", "date": "2022-02-17", "sst": 29.9, "sal": 34.53, "fluoro": 0.189, "par": 994.4, "wind_speed": 3.7, "oxygen": 3.86, "species_pct": {"Nanophytoplankton": 61.9, "Prochlorococcus": 9.5, "Mineral particles": 9.4, "Nitzschia": 7.2, "Picocyanobacteria": 6.8, "Cyanobacteria": 2.9, "Synechococcus": 1.6, "Crocosphaera": 0.7}, "species_counts": {"Nanophytoplankton": 153, "Prochlorococcus": 23, "Mineral particles": 23, "Nitzschia": 18, "Picocyanobacteria": 17, "Cyanobacteria": 7, "Synechococcus": 4, "Crocosphaera": 2}, "n_particles": 247, "biodiversity": {"shannon_H": 1.318, "simpson_D": 0.588, "pielou_J": 0.634, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 61.9}, "carbon_by_class": {"Nanophytoplankton": 3159.718, "Prochlorococcus": 0.319, "Mineral particles": 141.704, "Nitzschia": 10678.592, "Picocyanobacteria": 2.543, "Cyanobacteria": 11.835, "Synechococcus": 0.265, "Crocosphaera": 15.265}, "total_carbon_pg": 14010.24, "esd_dist": {"0-10": 87, "10-20": 9, "20-30": 3, "30-40": 1}}, "BFZ-Cast89": {"cast": "BFZ-Cast89", "lat": -15.6914, "lon": 115.7725, "depth": "10m", "date": "2022-02-18", "sst": 30.36, "sal": 34.55, "fluoro": 0.687, "par": 1234.8, "wind_speed": 4.1, "oxygen": 3.806, "species_pct": {"Nanophytoplankton": 54.5, "Prochlorococcus": 15.3, "Mineral particles": 11.1, "Nitzschia": 10.4, "Picocyanobacteria": 4.5, "Cyanobacteria": 2.8, "Synechococcus": 0.9, "Crocosphaera": 0.6}, "species_counts": {"Nanophytoplankton": 106, "Prochlorococcus": 30, "Mineral particles": 22, "Nitzschia": 20, "Picocyanobacteria": 9, "Cyanobacteria": 5, "Synechococcus": 2, "Crocosphaera": 1}, "n_particles": 194, "biodiversity": {"shannon_H": 1.408, "simpson_D": 0.654, "pielou_J": 0.677, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 54.5}, "carbon_by_class": {"Nanophytoplankton": 2189.086, "Prochlorococcus": 0.416, "Mineral particles": 135.543, "Nitzschia": 11865.102, "Picocyanobacteria": 1.346, "Cyanobacteria": 8.454, "Synechococcus": 0.133, "Crocosphaera": 7.632}, "total_carbon_pg": 14207.71, "esd_dist": {"0-10": 84, "10-20": 11, "20-30": 3, "30-40": 2}}, "BFZ-Cast91": {"cast": "BFZ-Cast91", "lat": -15.9565, "lon": 117.5066, "depth": "5m", "date": "2022-02-19", "sst": 30.32, "sal": 34.51, "fluoro": 1.499, "par": 1193.2, "wind_speed": 4.5, "oxygen": 3.756, "species_pct": {"Nanophytoplankton": 69.3, "Prochlorococcus": 7.3, "Mineral particles": 7.3, "Nitzschia": 5.6, "Picocyanobacteria": 5.2, "Cyanobacteria": 3.2, "Synechococcus": 1.3, "Crocosphaera": 0.8}, "species_counts": {"Nanophytoplankton": 139, "Prochlorococcus": 15, "Mineral particles": 15, "Nitzschia": 11, "Picocyanobacteria": 11, "Cyanobacteria": 6, "Synechococcus": 3, "Crocosphaera": 2}, "n_particles": 201, "biodiversity": {"shannon_H": 1.154, "simpson_D": 0.501, "pielou_J": 0.555, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 69.3}, "carbon_by_class": {"Nanophytoplankton": 2870.593, "Prochlorococcus": 0.208, "Mineral particles": 92.415, "Nitzschia": 6525.806, "Picocyanobacteria": 1.645, "Cyanobacteria": 10.144, "Synechococcus": 0.199, "Crocosphaera": 15.265}, "total_carbon_pg": 9516.27, "esd_dist": {"0-10": 87, "10-20": 9, "20-30": 3, "30-40": 1}}, "BFZ-Cast94": {"cast": "BFZ-Cast94", "lat": -15.8866, "lon": 118.2138, "depth": "10m", "date": "2022-02-21", "sst": 30.33, "sal": 34.53, "fluoro": 2.83, "par": 1278.0, "wind_speed": 5.3, "oxygen": 3.624, "species_pct": {"Nanophytoplankton": 63.8, "Prochlorococcus": 11.7, "Mineral particles": 8.5, "Nitzschia": 8.0, "Picocyanobacteria": 3.4, "Cyanobacteria": 3.2, "Synechococcus": 0.7, "Crocosphaera": 0.7}, "species_counts": {"Nanophytoplankton": 132, "Prochlorococcus": 24, "Mineral particles": 18, "Nitzschia": 17, "Picocyanobacteria": 7, "Cyanobacteria": 7, "Synechococcus": 1, "Crocosphaera": 1}, "n_particles": 207, "biodiversity": {"shannon_H": 1.243, "simpson_D": 0.563, "pielou_J": 0.598, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 63.8}, "carbon_by_class": {"Nanophytoplankton": 2726.031, "Prochlorococcus": 0.333, "Mineral particles": 110.898, "Nitzschia": 10085.337, "Picocyanobacteria": 1.047, "Cyanobacteria": 11.835, "Synechococcus": 0.066, "Crocosphaera": 7.632}, "total_carbon_pg": 12943.18, "esd_dist": {"0-10": 84, "10-20": 11, "20-30": 3, "30-40": 2}}, "BFZ-Cast97": {"cast": "BFZ-Cast97", "lat": -15.9536, "lon": 118.1119, "depth": "5m", "date": "2022-02-22", "sst": 30.32, "sal": 34.53, "fluoro": 3.306, "par": 1104.3, "wind_speed": 4.5, "oxygen": 3.566, "species_pct": {"Nanophytoplankton": 74.8, "Prochlorococcus": 5.8, "Mineral particles": 5.7, "Nitzschia": 4.4, "Picocyanobacteria": 4.1, "Cyanobacteria": 3.4, "Synechococcus": 1.0, "Crocosphaera": 0.8}, "species_counts": {"Nanophytoplankton": 146, "Prochlorococcus": 11, "Mineral particles": 11, "Nitzschia": 9, "Picocyanobacteria": 8, "Cyanobacteria": 7, "Synechococcus": 2, "Crocosphaera": 2}, "n_particles": 195, "biodiversity": {"shannon_H": 1.015, "simpson_D": 0.429, "pielou_J": 0.488, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 74.8}, "carbon_by_class": {"Nanophytoplankton": 3015.156, "Prochlorococcus": 0.152, "Mineral particles": 67.771, "Nitzschia": 5339.296, "Picocyanobacteria": 1.196, "Cyanobacteria": 11.835, "Synechococcus": 0.133, "Crocosphaera": 15.265}, "total_carbon_pg": 8450.8, "esd_dist": {"0-10": 87, "10-20": 9, "20-30": 3, "30-40": 1}}, "BFZ-Cast111": {"cast": "BFZ-Cast111", "lat": -15.9942, "lon": 118.0846, "depth": "5m", "date": "2022-02-23", "sst": 30.35, "sal": 34.54, "fluoro": 0.04, "par": 1237.0, "wind_speed": 3.8, "oxygen": 3.601, "species_pct": {"Nanophytoplankton": 61.9, "Prochlorococcus": 9.5, "Mineral particles": 9.4, "Nitzschia": 7.2, "Picocyanobacteria": 6.8, "Cyanobacteria": 2.9, "Synechococcus": 1.6, "Crocosphaera": 0.7}, "species_counts": {"Nanophytoplankton": 124, "Prochlorococcus": 19, "Mineral particles": 19, "Nitzschia": 14, "Picocyanobacteria": 14, "Cyanobacteria": 6, "Synechococcus": 3, "Crocosphaera": 1}, "n_particles": 200, "biodiversity": {"shannon_H": 1.318, "simpson_D": 0.588, "pielou_J": 0.634, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 61.9}, "carbon_by_class": {"Nanophytoplankton": 2560.817, "Prochlorococcus": 0.263, "Mineral particles": 117.059, "Nitzschia": 8305.572, "Picocyanobacteria": 2.094, "Cyanobacteria": 10.144, "Synechococcus": 0.199, "Crocosphaera": 7.632}, "total_carbon_pg": 11003.78, "esd_dist": {"0-10": 87, "10-20": 9, "20-30": 3, "30-40": 1}}, "BFZ-Cast141": {"cast": "BFZ-Cast141", "lat": -15.0002, "lon": 118.2497, "depth": "10m", "date": "2022-02-25", "sst": 30.06, "sal": 34.5, "fluoro": 0.041, "par": 1119.4, "wind_speed": 6.3, "oxygen": 3.657, "species_pct": {"Nanophytoplankton": 50.1, "Prochlorococcus": 16.9, "Mineral particles": 12.3, "Nitzschia": 11.6, "Picocyanobacteria": 5.0, "Cyanobacteria": 2.6, "Synechococcus": 1.0, "Crocosphaera": 0.5}, "species_counts": {"Nanophytoplankton": 91, "Prochlorococcus": 31, "Mineral particles": 22, "Nitzschia": 21, "Picocyanobacteria": 9, "Cyanobacteria": 5, "Synechococcus": 2, "Crocosphaera": 1}, "n_particles": 182, "biodiversity": {"shannon_H": 1.471, "simpson_D": 0.688, "pielou_J": 0.707, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 50.1}, "carbon_by_class": {"Nanophytoplankton": 1879.309, "Prochlorococcus": 0.43, "Mineral particles": 135.543, "Nitzschia": 12458.357, "Picocyanobacteria": 1.346, "Cyanobacteria": 8.454, "Synechococcus": 0.133, "Crocosphaera": 7.632}, "total_carbon_pg": 14491.2, "esd_dist": {"0-10": 84, "10-20": 11, "20-30": 3, "30-40": 2}}, "BFZ-Cast143": {"cast": "BFZ-Cast143", "lat": -15.0003, "lon": 114.5031, "depth": "10m", "date": "2022-02-26", "sst": 30.14, "sal": 34.5, "fluoro": 0.041, "par": 1229.4, "wind_speed": 7.0, "oxygen": 3.848, "species_pct": {"Nanophytoplankton": 50.1, "Prochlorococcus": 16.9, "Mineral particles": 12.3, "Nitzschia": 11.6, "Picocyanobacteria": 5.0, "Cyanobacteria": 2.6, "Synechococcus": 1.0, "Crocosphaera": 0.5}, "species_counts": {"Nanophytoplankton": 101, "Prochlorococcus": 34, "Mineral particles": 25, "Nitzschia": 23, "Picocyanobacteria": 10, "Cyanobacteria": 5, "Synechococcus": 2, "Crocosphaera": 1}, "n_particles": 201, "biodiversity": {"shannon_H": 1.471, "simpson_D": 0.688, "pielou_J": 0.707, "richness": 8, "dominant": "Nanophytoplankton", "dominant_pct": 50.1}, "carbon_by_class": {"Nanophytoplankton": 2085.827, "Prochlorococcus": 0.471, "Mineral particles": 154.026, "Nitzschia": 13644.868, "Picocyanobacteria": 1.496, "Cyanobacteria": 8.454, "Synechococcus": 0.133, "Crocosphaera": 7.632}, "total_carbon_pg": 15902.91, "esd_dist": {"0-10": 84, "10-20": 11, "20-30": 3, "30-40": 2}}};
+var SPECIES_COLORS = {"Nanophytoplankton": "#ff6b35", "Prochlorococcus": "#60d9fa", "Mineral particles": "#a78bfa", "Nitzschia": "#ffd700", "Picocyanobacteria": "#f472b6", "Cyanobacteria": "#00ffaa", "Synechococcus": "#4ade80", "Crocosphaera": "#00d4ff"};
+
+function smTab(el, pane) {
+  document.querySelectorAll('.sm-tab').forEach(function(t){t.classList.remove('active');});
+  document.querySelectorAll('.sm-pane').forEach(function(p){p.classList.remove('active');});
+  el.classList.add('active');
+  document.getElementById('pane-'+pane).classList.add('active');
+  setTimeout(function(){Object.values(_smCharts).forEach(function(c){if(c&&c.resize)c.resize();});},50);
+}
+
+function closeStationModal() {
+  document.getElementById('stationModal').classList.remove('open');
+  Object.values(_smCharts).forEach(function(c){if(c)c.destroy();});
+  _smCharts = {};
+}
+
+var _smCharts = {};
+
+function openStationModal(castName) {
+  var s = STATION_DATA[castName];
+  if (!s) return;
+  Object.values(_smCharts).forEach(function(c){if(c)c.destroy();});
+  _smCharts = {};
+
+  document.querySelectorAll('.sm-tab').forEach(function(t,i){t.classList.toggle('active',i===0);});
+  document.querySelectorAll('.sm-pane').forEach(function(p,i){p.classList.toggle('active',i===0);});
+
+  document.getElementById('smTitle').textContent = s.cast;
+  document.getElementById('smSubtitle').textContent =
+    s.date + '  \u00b7  ' + Math.abs(s.lat).toFixed(3) + '\u00b0S, ' + s.lon.toFixed(3) + '\u00b0E' +
+    '  \u00b7  Depth: ' + s.depth + '  \u00b7  N=' + s.n_particles + ' particles';
+
+  var kpis = [
+    {val: s.sst+'\u00b0C',  lbl: 'SST',         col: '#ff6b35'},
+    {val: s.sal+' PSU',      lbl: 'SALINITY',     col: '#60d9fa'},
+    {val: s.fluoro,          lbl: 'FLUORESCENCE', col: '#00ffaa'},
+    {val: s.biodiversity.shannon_H.toFixed(2), lbl: "SHANNON H'", col: '#ffd700'},
+    {val: s.biodiversity.richness, lbl: 'RICHNESS', col: '#f472b6'},
+    {val: s.total_carbon_pg.toLocaleString(), lbl: 'CARBON (pgC)', col: '#a78bfa'},
+  ];
+  document.getElementById('smKpis').innerHTML = kpis.map(function(k){
+    return '<div class="sm-kpi"><div class="sm-kpi-val" style="color:'+k.col+'">'+k.val+'</div><div class="sm-kpi-lbl">'+k.lbl+'</div></div>';
+  }).join('');
+
+  buildOverviewPane(s);
+  buildSpeciesPane(s);
+  buildBiomassPane(s);
+  buildEnvPane(s);
+  buildBiodiversityPane(s);
+  document.getElementById('stationModal').classList.add('open');
+}
+
+var _gc = 'rgba(0,212,255,.06)';
+var _td = {backgroundColor:'rgba(3,12,25,.95)',borderColor:'rgba(0,212,255,.2)',titleColor:'rgba(200,232,245,.7)',bodyColor:'rgba(200,232,245,.5)',padding:10};
+
+function buildOverviewPane(s) {
+  var pane = document.getElementById('pane-overview');
+  pane.innerHTML = '<div class="sm-grid2"><div class="sm-card"><div class="sm-card-title"><span style=\"color:var(--c1)\">&#9679;</span> DOMINANT SPECIES</div><div class="sm-ch sm-ch-160"><canvas id=\"smDonut\"></canvas></div></div><div class="sm-card"><div class="sm-card-title"><span style=\"color:var(--c6)\">&#9679;</span> STATION vs CRUISE AVG</div><div class="sm-ch sm-ch-160"><canvas id=\"smRadar\"></canvas></div></div></div><div class="sm-card"><div class="sm-card-title"><span style=\"color:var(--c2)\">&#9679;</span> SST CRUISE TRACK — this station highlighted</div><div class="sm-ch sm-ch-100"><canvas id=\"smSSTLine\"></canvas></div></div>';
+  var spNames = Object.keys(s.species_pct);
+  var spVals  = Object.values(s.species_pct);
+  var spCols  = spNames.map(function(n){return SPECIES_COLORS[n]||'#888';});
+  _smCharts.donut = new Chart(document.getElementById('smDonut'),{type:'doughnut',data:{labels:spNames,datasets:[{data:spVals,backgroundColor:spCols.map(function(c){return c+'cc';}),borderColor:spCols,borderWidth:2,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'right',labels:{font:{size:9},boxWidth:8,color:'rgba(200,232,245,.55)',padding:6}},tooltip:{...(_td)}}}});
+  var radarAvg = {Nanophytoplankton:56.1,Prochlorococcus:13.2,'Mineral particles':10.9,Nitzschia:9.4,Picocyanobacteria:5.9,Cyanobacteria:2.7,Synechococcus:1.3,Crocosphaera:0.6};
+  var rLabels = ['Nanophyto','Prochloro','Mineral','Nitzschia','PicoCyano','Cyano','Synecho','Croco'];
+  var rKeys = Object.keys(radarAvg);
+  _smCharts.radar = new Chart(document.getElementById('smRadar'),{type:'radar',data:{labels:rLabels,datasets:[{label:'This Station',data:rKeys.map(function(k){return s.species_pct[k]||0;}),borderColor:'rgba(0,212,255,.9)',backgroundColor:'rgba(0,212,255,.08)',borderWidth:2,pointRadius:3},{label:'Cruise Avg',data:Object.values(radarAvg),borderColor:'rgba(255,107,53,.6)',backgroundColor:'rgba(255,107,53,.04)',borderWidth:1.5,pointRadius:2,borderDash:[4,3]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:8,color:'rgba(200,232,245,.45)'}},tooltip:{...(_td)}},scales:{r:{grid:{color:'rgba(0,212,255,.07)'},angleLines:{color:'rgba(0,212,255,.07)'},pointLabels:{color:'rgba(200,232,245,.38)',font:{size:8.5}},ticks:{color:'rgba(200,232,245,.18)',font:{size:7},backdropColor:'transparent'},min:0}}}});
+  var stationList = Object.values(STATION_DATA);
+  var castIdx = stationList.findIndex(function(st){return st.cast===s.cast;});
+  var allSST2 = stationList.map(function(st){return st.sst;});
+  var castLabels2 = stationList.map(function(st){return st.cast.replace('BFZ-Cast','C');});
+  _smCharts.sstLine = new Chart(document.getElementById('smSSTLine'),{type:'bar',data:{labels:castLabels2,datasets:[{label:'SST',data:allSST2,backgroundColor:castLabels2.map(function(_,i){return i===castIdx?'#ff6b35':'rgba(255,107,53,.25)';}),borderColor:castLabels2.map(function(_,i){return i===castIdx?'#ff6b35':'rgba(255,107,53,.4)';}),borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{..._td,callbacks:{label:function(c){return ' '+c.raw+'\u00b0C';}}}},scales:{x:{grid:{color:_gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:7.5}}},y:{grid:{color:_gc},min:27,ticks:{color:'rgba(200,232,245,.3)',font:{size:7.5}}}}}});
+}
+
+function buildSpeciesPane(s) {
+  var pane = document.getElementById('pane-species');
+  var spList = Object.entries(s.species_pct).sort(function(a,b){return b[1]-a[1];});
+  var spBarHtml = spList.map(function(e){var col=SPECIES_COLORS[e[0]]||'#888';return '<div class="sp-row"><div class="sp-dot" style="background:'+col+'"></div><div class="sp-name">'+e[0]+'</div><div class="sp-bar-bg"><div class="sp-bar-fg" style="width:'+e[1]+'%;background:'+col+'"></div></div><div class="sp-pct">'+e[1]+'%</div></div>';}).join('');
+  pane.innerHTML = '<div class="sm-grid2"><div class="sm-card"><div class="sm-card-title"><span style=\"color:var(--c1)\">&#9679;</span> CLASS DISTRIBUTION (%)</div><div class="sm-ch sm-ch-200"><canvas id=\"smSpBar\"></canvas></div></div><div class="sm-card"><div class="sm-card-title"><span style=\"color:var(--c5)\">&#9679;</span> RANKED ABUNDANCES</div>'+spBarHtml+'<div style=\"margin-top:10px;font-size:9px;color:rgba(200,232,245,.25);font-family:var(--mono)\">N='+s.n_particles+' particles \u00b7 depth: '+s.depth+'</div></div></div><div class="sm-card"><div class="sm-card-title"><span style=\"color:var(--c6)\">&#9679;</span> ESD DISTRIBUTION AT '+s.depth+'</div><div class="sm-ch sm-ch-100"><canvas id=\"smESD\"></canvas></div></div>';
+  var spKeys = Object.keys(s.species_pct);
+  var spCols2 = spKeys.map(function(k){return SPECIES_COLORS[k]||'#888';});
+  _smCharts.spBar = new Chart(document.getElementById('smSpBar'),{type:'bar',data:{labels:spKeys.map(function(k){return k.replace('Nanophytoplankton','Nanophyto').replace('Picocyanobacteria','PicoCyano').replace('Mineral particles','Mineral');}),datasets:[{label:'%',data:Object.values(s.species_pct),backgroundColor:spCols2.map(function(c){return c+'99';}),borderColor:spCols2,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{..._td,callbacks:{label:function(c){return ' '+c.raw+'%';}}}},scales:{x:{grid:{color:_gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}},max:80},y:{grid:{display:false},ticks:{color:'rgba(200,232,245,.45)',font:{size:9.5}}}}}});
+  _smCharts.esd = new Chart(document.getElementById('smESD'),{type:'bar',data:{labels:Object.keys(s.esd_dist).map(function(k){return k+'\u00b5m';}),datasets:[{label:'%',data:Object.values(s.esd_dist),backgroundColor:'rgba(0,212,255,.4)',borderColor:'rgba(0,212,255,.8)',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{..._td}},scales:{x:{grid:{color:_gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:_gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}}}}});
+}
+
+function buildBiomassPane(s) {
+  var pane = document.getElementById('pane-biomass');
+  pane.innerHTML = '<div class="sm-grid2" style=\"margin-bottom:16px\"><div class="sm-card"><div class="sm-card-title"><span style=\"color:var(--c5)\">&#9679;</span> CARBON BIOMASS BY CLASS (pgC)</div><div class="sm-ch sm-ch-200"><canvas id=\"smCarbonBar\"></canvas></div></div><div class="sm-card"><div class="sm-card-title"><span style=\"color:var(--c6)\">&#9679;</span> CARBON PROPORTION</div><div class="sm-ch sm-ch-200"><canvas id=\"smCarbonDonut\"></canvas></div></div></div><div class="sm-card"><div class="sm-card-title"><span style=\"color:var(--c4)\">&#9679;</span> TOTAL CARBON vs ALL STATIONS (pgC)</div><div class="sm-ch sm-ch-100"><canvas id=\"smCarbonAll\"></canvas></div><div style=\"font-size:9px;color:rgba(200,232,245,.2);margin-top:6px;font-family:var(--mono)\">C = 0.109 \u00d7 V^0.991 \u00b7 Menden-Deuer &amp; Lessard 2000</div></div>';
+  var cbKeys = Object.keys(s.carbon_by_class).sort(function(a,b){return s.carbon_by_class[b]-s.carbon_by_class[a];});
+  var cbVals = cbKeys.map(function(k){return s.carbon_by_class[k];});
+  var cbCols = cbKeys.map(function(k){return SPECIES_COLORS[k]||'#888';});
+  _smCharts.carbonBar = new Chart(document.getElementById('smCarbonBar'),{type:'bar',data:{labels:cbKeys.map(function(k){return k.replace('Nanophytoplankton','Nanophyto').replace('Mineral particles','Mineral').replace('Picocyanobacteria','PicoCyano');}),datasets:[{label:'pgC',data:cbVals,backgroundColor:cbCols.map(function(c){return c+'88';}),borderColor:cbCols,borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},tooltip:{..._td,callbacks:{label:function(c){return ' '+c.raw.toLocaleString()+' pgC';}}}},scales:{x:{grid:{color:_gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{display:false},ticks:{color:'rgba(200,232,245,.45)',font:{size:9.5}}}}}});
+  _smCharts.carbonDonut = new Chart(document.getElementById('smCarbonDonut'),{type:'doughnut',data:{labels:cbKeys,datasets:[{data:cbVals,backgroundColor:cbCols.map(function(c){return c+'cc';}),borderColor:cbCols,borderWidth:2,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'bottom',labels:{font:{size:8.5},boxWidth:7,color:'rgba(200,232,245,.45)',padding:5}},tooltip:{..._td,callbacks:{label:function(c){return ' '+c.label+': '+c.raw.toLocaleString()+' pgC';}}}}}});
+  var stList2 = Object.values(STATION_DATA);
+  var castIdx2 = stList2.findIndex(function(st){return st.cast===s.cast;});
+  _smCharts.carbonAll = new Chart(document.getElementById('smCarbonAll'),{type:'bar',data:{labels:stList2.map(function(st){return st.cast.replace('BFZ-Cast','C');}),datasets:[{label:'pgC',data:stList2.map(function(st){return st.total_carbon_pg;}),backgroundColor:stList2.map(function(_,i){return i===castIdx2?'rgba(167,139,250,.85)':'rgba(167,139,250,.25)';}),borderColor:stList2.map(function(_,i){return i===castIdx2?'#a78bfa':'rgba(167,139,250,.4)';}),borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{..._td,callbacks:{label:function(c){return ' '+c.raw.toLocaleString()+' pgC';}}}},scales:{x:{grid:{color:_gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:7.5}}},y:{grid:{color:_gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:7.5}}}}}});
+}
+
+function buildEnvPane(s) {
+  var pane = document.getElementById('pane-environment');
+  var par  = s.par ? s.par.toLocaleString()+' μmol/m²/s' : 'N/A';
+  var wind = s.wind_speed ? s.wind_speed+' m/s' : 'N/A';
+  var oxy  = s.oxygen ? s.oxygen+' mg/L' : 'N/A';
+  pane.innerHTML = '<div class="env-row"><div class="env-metric"><div class="env-val" style=\"color:#ff6b35\">'+s.sst+'<span class=\"env-unit\">\u00b0C</span></div><div class=\"env-lbl\">Sea Surface Temp</div></div><div class=\"env-metric\"><div class=\"env-val\" style=\"color:#60d9fa\">'+s.sal+'<span class=\"env-unit\">PSU</span></div><div class=\"env-lbl\">Salinity</div></div><div class=\"env-metric\"><div class=\"env-val\" style=\"color:#00ffaa\">'+s.fluoro+'</div><div class=\"env-lbl\">Fluorescence</div></div></div><div class=\"env-row\"><div class=\"env-metric\"><div class=\"env-val\" style=\"color:#ffd700\">'+par+'</div><div class=\"env-lbl\">PAR</div></div><div class=\"env-metric\"><div class=\"env-val\" style=\"color:#f472b6\">'+wind+'</div><div class=\"env-lbl\">Wind Speed</div></div><div class=\"env-metric\"><div class=\"env-val\" style=\"color:#4ade80\">'+oxy+'</div><div class=\"env-lbl\">Dissolved Oxygen</div></div></div><div class=\"sm-card\" style=\"margin-bottom:14px\"><div class=\"sm-card-title\"><span style=\"color:var(--c2)\">&#9679;</span> FLUORESCENCE vs SST — ALL STATIONS</div><div class=\"sm-ch sm-ch-160\"><canvas id=\"smEnvScatter\"></canvas></div></div><div class=\"sm-card\"><div class=\"sm-card-title\"><span style=\"color:var(--c1)\">&#9679;</span> SALINITY CRUISE PROFILE</div><div class=\"sm-ch sm-ch-100\"><canvas id=\"smSalLine\"></canvas></div></div>';
+  var stList3 = Object.values(STATION_DATA);
+  var castIdx3 = stList3.findIndex(function(st){return st.cast===s.cast;});
+  _smCharts.scatter = new Chart(document.getElementById('smEnvScatter'),{type:'scatter',data:{datasets:[{label:'Other stations',data:stList3.filter(function(_,i){return i!==castIdx3;}).map(function(st){return {x:st.sst,y:st.fluoro};}),backgroundColor:'rgba(0,255,170,.3)',borderColor:'rgba(0,255,170,.5)',pointRadius:5},{label:'This station',data:[{x:s.sst,y:s.fluoro}],backgroundColor:'#ff6b35',borderColor:'#ff6b35',pointRadius:10,pointStyle:'star'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:8,color:'rgba(200,232,245,.45)'}},tooltip:{..._td,callbacks:{label:function(c){return ' SST:'+c.raw.x+'°C Flu:'+c.raw.y;}}}},scales:{x:{grid:{color:_gc},title:{display:true,text:'SST (°C)',color:'rgba(200,232,245,.3)',font:{size:9}},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:_gc},title:{display:true,text:'Fluorescence',color:'rgba(200,232,245,.3)',font:{size:9}},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}}}}});
+  _smCharts.sal = new Chart(document.getElementById('smSalLine'),{type:'line',data:{labels:stList3.map(function(st){return st.cast.replace('BFZ-Cast','C');}),datasets:[{label:'Salinity (PSU)',data:stList3.map(function(st){return st.sal;}),borderColor:'rgba(96,217,250,.7)',backgroundColor:'rgba(96,217,250,.06)',borderWidth:2,pointRadius:stList3.map(function(_,i){return i===castIdx3?7:3;}),pointBackgroundColor:stList3.map(function(_,i){return i===castIdx3?'#60d9fa':'rgba(96,217,250,.5)';}),tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{..._td,callbacks:{label:function(c){return ' '+c.raw+' PSU';}}}},scales:{x:{grid:{color:_gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:7.5}}},y:{grid:{color:_gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:7.5}},min:34}}}});
+}
+
+function buildBiodiversityPane(s) {
+  var pane = document.getElementById('pane-biodiversity');
+  var b = s.biodiversity;
+  var stList4 = Object.values(STATION_DATA);
+  var castIdx4 = stList4.findIndex(function(st){return st.cast===s.cast;});
+  var indices = [
+    {name:"Shannon H&#39;",val:b.shannon_H,max:2.08,desc:'0=monoculture \u2022 2.08=max (8 spp)',col:'#ffd700'},
+    {name:'Simpson D', val:b.simpson_D, max:1.0, desc:'P(two random cells differ)',col:'#00ffaa'},
+    {name:"Pielou J&#x27;", val:b.pielou_J,  max:1.0, desc:'1.0=perfectly equal abundance',col:'#f472b6'},
+  ];
+  var idxHtml = indices.map(function(idx){return '<div style=\"margin-bottom:12px\"><div style=\"display:flex;justify-content:space-between;margin-bottom:4px\"><span style=\"font-size:9.5px;color:rgba(200,232,245,.6);font-family:monospace\">'+idx.name+'</span><span style=\"font-size:13px;font-weight:700;color:'+idx.col+';font-family:monospace\">'+idx.val+'</span></div><div style=\"height:8px;background:rgba(0,0,0,.3);border-radius:99px;overflow:hidden;border:1px solid rgba(255,255,255,.06)\"><div style=\"height:100%;width:'+(idx.val/idx.max*100).toFixed(0)+'%;background:linear-gradient(90deg,'+idx.col+'88,'+idx.col+');border-radius:99px\"></div></div><div style=\"font-size:8px;color:rgba(200,232,245,.25);margin-top:3px\">'+idx.desc+'</div></div>';}).join('');
+  pane.innerHTML = '<div class=\"sm-grid2\" style=\"margin-bottom:14px\"><div class=\"sm-card\"><div class=\"sm-card-title\"><span style=\"color:var(--c6)\">&#9679;</span> BIODIVERSITY INDICES</div><div class=\"bio-index\"><div class=\"bio-name\">Shannon H&#x27;</div><div class=\"bio-bar-wrap\"><div class=\"bio-bar\" style=\"width:'+(b.shannon_H/2.08*100).toFixed(0)+'%\"></div></div><div class=\"bio-val\">'+b.shannon_H+'</div></div><div class=\"bio-index\"><div class=\"bio-name\">Simpson D</div><div class=\"bio-bar-wrap\"><div class=\"bio-bar\" style=\"width:'+(b.simpson_D*100).toFixed(0)+'%\"></div></div><div class=\"bio-val\">'+b.simpson_D+'</div></div><div class=\"bio-index\"><div class=\"bio-name\">Pielou J&#x27;</div><div class=\"bio-bar-wrap\"><div class=\"bio-bar\" style=\"width:'+(b.pielou_J*100).toFixed(0)+'%\"></div></div><div class=\"bio-val\">'+b.pielou_J+'</div></div><div class=\"bio-index\"><div class=\"bio-name\">Richness S</div><div class=\"bio-bar-wrap\"><div class=\"bio-bar\" style=\"width:'+(b.richness/8*100).toFixed(0)+'%\"></div></div><div class=\"bio-val\">'+b.richness+' spp</div></div><div style=\"margin-top:12px;font-size:9px;color:rgba(200,232,245,.28);font-family:var(--mono);line-height:1.6\">Dominant: <b style=\"color:var(--c1)\">'+b.dominant+'</b><br>At '+b.dominant_pct+'% of assemblage</div></div><div class=\"sm-card\"><div class=\"sm-card-title\"><span style=\"color:var(--c1)\">&#9679;</span> INDEX GAUGE</div>'+idxHtml+'</div></div><div class=\"sm-card\"><div class=\"sm-card-title\"><span style=\"color:var(--c2)\">&#9679;</span> SHANNON H&#x27; ACROSS ALL STATIONS</div><div class=\"sm-ch sm-ch-100\"><canvas id=\"smHBar\"></canvas></div></div>';
+  _smCharts.hBar = new Chart(document.getElementById('smHBar'),{type:'bar',data:{labels:stList4.map(function(st){return st.cast.replace('BFZ-Cast','C');}),datasets:[{label:"Shannon H&#39;",data:stList4.map(function(st){return st.biodiversity.shannon_H;}),backgroundColor:stList4.map(function(_,i){return i===castIdx4?'rgba(255,215,0,.85)':'rgba(255,215,0,.25)';}),borderColor:stList4.map(function(_,i){return i===castIdx4?'#ffd700':'rgba(255,215,0,.4)';}),borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{..._td,callbacks:{label:function(c){return " H'="+c.raw;}}}},scales:{x:{grid:{color:_gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:7.5}}},y:{grid:{color:_gc},min:0,max:2.2,ticks:{color:'rgba(200,232,245,.3)',font:{size:7.5}}}}}});
+}
+
+document.getElementById('stationModal').addEventListener('click',function(e){if(e.target===this)closeStationModal();});
 
 </script>
 </body>
