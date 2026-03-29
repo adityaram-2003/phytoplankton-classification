@@ -1307,6 +1307,14 @@ body{font-family:var(--font);background:var(--ink);color:#c8e8f5;display:flex;mi
           SST (°C) + Fluorescence · from BLOOFINZ_MET.xlsx · swapped Lat/Lon corrected · 19 cast stations
         </div>
       </div>
+      <!-- Daily Chl + Fv/Fm from CLS 133k rows -->
+      <div class="g p gh" style="margin-top:12px">
+        <div class="ct"><div class="cdot c2"></div>Daily Chlorophyll-a &amp; Fv/Fm — 133,806 CLS Measurements · Full Cruise Track</div>
+        <div class="ch" style="height:160px"><canvas id="dailyChlChart"></canvas></div>
+        <div style="font-size:9px;color:rgba(200,232,245,.22);margin-top:6px;font-family:var(--mono)">
+          Calibrated Chl-a (µg/L) + Photosynthetic Efficiency (Fv/Fm) · BLOOFINZ_CLS_FINAL.xlsx · Jan 29 – Mar 3 2022
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -1617,8 +1625,104 @@ fetch('https://raw.githubusercontent.com/adityaram-2003/phytoplankton-classifica
   document.getElementById('liveBadge').style.display='inline-flex';
   if(d.val_accuracy){cnt('n3',+(d.val_accuracy*100).toFixed(1),1200,1);}
   if(d.macro_f1){document.getElementById('n4').textContent=d.macro_f1.toFixed(2);}
-  console.log('✅ Live metrics loaded');
+  console.log('\u2705 Live metrics loaded');
 }).catch(()=>console.log('Using fallback data'));
+
+/* ═══════ CRUISE DATA (CLS+FIRE 133k rows) ═══════ */
+var CRUISE_DATA=null;
+fetch('https://raw.githubusercontent.com/adityaram-2003/phytoplankton-classification/main/cruise_data.json')
+.then(function(r){return r.json();}).then(function(d){
+  CRUISE_DATA=d;
+  console.log('\u2705 cruise_data loaded track:'+d.track.length+' daily:'+d.daily.length);
+  wireCruiseData(d);
+}).catch(function(e){console.warn('cruise_data not loaded',e);});
+
+function wireCruiseData(cd){
+  /* A. Chl-colored track on Leaflet */
+  if(typeof map!=='undefined'&&cd.track&&cd.track.length>0){
+    var cv=cd.track.map(function(p){return p.chl||0;}).filter(function(v){return v>0&&v<5;});
+    var cMin=Math.min.apply(null,cv)||0.01, cMax=Math.max.apply(null,cv)||0.5;
+    function cCol(v){
+      if(!v||v<=0||v>5)return 'rgba(0,212,255,.2)';
+      var t=Math.min(1,Math.max(0,(v-cMin)/(cMax-cMin)));
+      var r,g,b;
+      if(t<0.33){r=0;g=Math.round(t/0.33*255);b=255;}
+      else if(t<0.66){r=0;g=255;b=Math.round((1-(t-0.33)/0.33)*255);}
+      else{r=Math.round((t-0.66)/0.34*255);g=255;b=0;}
+      return 'rgba('+r+','+g+','+b+',.85)';
+    }
+    for(var i=1;i<cd.track.length;i++){
+      var p1=cd.track[i-1],p2=cd.track[i];
+      if(!p1.lat||!p2.lat)continue;
+      L.polyline([[p1.lat,p1.lon],[p2.lat,p2.lon]],{
+        color:cCol((p1.chl+p2.chl)/2),weight:2.5,opacity:0.85
+      }).addTo(map).bindTooltip(
+        'Chl: '+(p1.chl||0).toFixed(4)+' \u00b5g/L  Fv/Fm: '+(p1.fvfm>0?p1.fvfm.toFixed(3):'N/A')+'  '+p1.date,
+        {sticky:true,className:'leaflet-tooltip-dark'}
+      );
+    }
+    var lg=L.control({position:'bottomleft'});
+    lg.onAdd=function(){
+      var d=L.DomUtil.create('div');
+      d.style.cssText='background:rgba(3,12,25,.92);border:1px solid rgba(0,212,255,.2);border-radius:8px;padding:8px 12px;font-family:JetBrains Mono,monospace;font-size:9px;color:rgba(200,232,245,.6)';
+      d.innerHTML='<b style="color:rgba(200,232,245,.85)">CHLOROPHYLL TRACK</b><br>'+
+        '<div style="display:flex;align-items:center;gap:5px;margin:4px 0"><div style="width:50px;height:5px;background:linear-gradient(90deg,rgba(0,0,255,.8),rgba(0,255,0,.8),rgba(255,215,0,.8));border-radius:3px"></div></div>'+
+        '<span>'+cMin.toFixed(3)+' \u2192 '+cMax.toFixed(3)+' \u00b5g/L</span><br>'+
+        '<span style="color:rgba(200,232,245,.3)">133,806 CLS measurements</span>';
+      return d;
+    };
+    lg.addTo(map);
+    console.log('\u2705 Chl track overlay drawn');
+  }
+
+  /* B. Daily Chl + Fv/Fm chart */
+  var el=document.getElementById('dailyChlChart');
+  if(el&&cd.daily&&cd.daily.length){
+    var labs=cd.daily.map(function(d){return d.date_str||'';});
+    var chlD=cd.daily.map(function(d){return d.chl<100?+d.chl.toFixed(4):null;});
+    var fvD=cd.daily.map(function(d){return d.fvfm>0&&d.fvfm<0.7?+d.fvfm.toFixed(4):null;});
+    var gc='rgba(0,212,255,.06)';
+    new Chart(el,{type:'line',data:{labels:labs,datasets:[
+      {label:'Chl-a (\u00b5g/L)',data:chlD,borderColor:'#00ffaa',backgroundColor:'rgba(0,255,170,.06)',
+       borderWidth:2,pointRadius:3,tension:0.3,yAxisID:'y1',spanGaps:true},
+      {label:'Fv/Fm',data:fvD,borderColor:'#ffd700',backgroundColor:'rgba(255,215,0,.04)',
+       borderWidth:2,pointRadius:3,tension:0.3,yAxisID:'y2',spanGaps:true}
+    ]},options:{responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{labels:{font:{size:9.5},boxWidth:8,color:'rgba(200,232,245,.45)'}},
+        tooltip:{backgroundColor:'rgba(3,12,25,.95)'}},
+      scales:{
+        x:{grid:{color:gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:8},maxRotation:45}},
+        y1:{type:'linear',position:'left',grid:{color:gc},
+          title:{display:true,text:'Chl-a (\u00b5g/L)',color:'#00ffaa',font:{size:9}},
+          ticks:{color:'#00ffaa',font:{size:8}}},
+        y2:{type:'linear',position:'right',grid:{display:false},
+          title:{display:true,text:'Fv/Fm',color:'#ffd700',font:{size:9}},
+          ticks:{color:'#ffd700',font:{size:8}},min:0,max:0.7}
+      }
+    }});
+    console.log('\u2705 Daily Chl+Fv/Fm chart rendered');
+  }
+
+  /* C. Wire real values into STATION_DATA */
+  if(cd.station_cls){
+    Object.keys(cd.station_cls).forEach(function(cast){
+      if(!STATION_DATA[cast])return;
+      var c=cd.station_cls[cast], f=(cd.station_fire&&cd.station_fire[cast])||{};
+      var fv=c.fvfm_mean;
+      STATION_DATA[cast].chl_real  = c.chl_mean<100?c.chl_mean:null;
+      STATION_DATA[cast].chl_max   = c.chl_max<100?c.chl_max:null;
+      STATION_DATA[cast].fvfm_real = (fv>0&&fv<0.7)?fv:null;
+      STATION_DATA[cast].fvfm_fire = f.fvfm_fire||null;
+      STATION_DATA[cast].fpe1      = c.fpe1_mean;
+      STATION_DATA[cast].fpe2      = c.fpe2_mean;
+      STATION_DATA[cast].fpe3      = c.fpe3_mean;
+      STATION_DATA[cast].fpe1_fchl = c.fpe1_fchl;
+      STATION_DATA[cast].n_cls     = c.n_cls_rows;
+    });
+    console.log('\u2705 Real CLS data wired into STATION_DATA');
+  }
+}
 
 /* ═══════ CAST CHIPS ═══════ */
 (()=>{
@@ -2332,6 +2436,25 @@ function buildEnvPane(s) {
   pane.innerHTML = '<div class="env-row"><div class="env-metric"><div class="env-val" style=\"color:#ff6b35\">'+s.sst+'<span class=\"env-unit\">\u00b0C</span></div><div class=\"env-lbl\">Sea Surface Temp</div></div><div class=\"env-metric\"><div class=\"env-val\" style=\"color:#60d9fa\">'+s.sal+'<span class=\"env-unit\">PSU</span></div><div class=\"env-lbl\">Salinity</div></div><div class=\"env-metric\"><div class=\"env-val\" style=\"color:#00ffaa\">'+s.fluoro+'</div><div class=\"env-lbl\">Fluorescence</div></div></div><div class=\"env-row\"><div class=\"env-metric\"><div class=\"env-val\" style=\"color:#ffd700\">'+par+'</div><div class=\"env-lbl\">PAR</div></div><div class=\"env-metric\"><div class=\"env-val\" style=\"color:#f472b6\">'+wind+'</div><div class=\"env-lbl\">Wind Speed</div></div><div class=\"env-metric\"><div class=\"env-val\" style=\"color:#4ade80\">'+oxy+'</div><div class=\"env-lbl\">Dissolved Oxygen</div></div></div><div class=\"sm-card\" style=\"margin-bottom:14px\"><div class=\"sm-card-title\"><span style=\"color:var(--c2)\">&#9679;</span> FLUORESCENCE vs SST — ALL STATIONS</div><div class=\"sm-ch sm-ch-160\"><canvas id=\"smEnvScatter\"></canvas></div></div><div class=\"sm-card\"><div class=\"sm-card-title\"><span style=\"color:var(--c1)\">&#9679;</span> SALINITY CRUISE PROFILE</div><div class=\"sm-ch sm-ch-100\"><canvas id=\"smSalLine\"></canvas></div></div>';
   var stList3 = Object.values(STATION_DATA);
   var castIdx3 = stList3.findIndex(function(st){return st.cast===s.cast;});
+  // Inject real CLS data panel if available
+  var clsPanel='';
+  if(s.fvfm_real!==null&&s.fvfm_real!==undefined){
+    var fvPct=(s.fvfm_real/0.65*100).toFixed(0);
+    var fvCol=s.fvfm_real>0.5?'#00ffaa':s.fvfm_real>0.35?'#ffd700':'#ff6b35';
+    clsPanel='<div class="sm-card" style="margin-bottom:14px"><div class="sm-card-title"><span style="color:#00ffaa">&#9679;</span> PHOTOPHYSIOLOGY — REAL CLS DATA ('+s.n_cls+' measurements)</div>'+
+      '<div class="env-row">'+
+      '<div class="env-metric"><div class="env-val" style="color:'+fvCol+'">'+s.fvfm_real.toFixed(3)+'</div><div class="env-lbl">Fv/Fm (CLS)</div></div>'+
+      (s.fvfm_fire?'<div class="env-metric"><div class="env-val" style="color:#a78bfa">'+s.fvfm_fire.toFixed(3)+'</div><div class="env-lbl">Fv/Fm (FIRE)</div></div>':'<div class="env-metric"><div class="env-val" style="color:rgba(200,232,245,.3)">N/A</div><div class="env-lbl">Fv/Fm (FIRE)</div></div>')+
+      (s.chl_real?'<div class="env-metric"><div class="env-val" style="color:#00ffaa">'+s.chl_real.toFixed(4)+'</div><div class="env-lbl">Chl-a µg/L</div></div>':'<div class="env-metric"><div class="env-val" style="color:rgba(200,232,245,.3)">N/A</div><div class="env-lbl">Chl-a µg/L</div></div>')+
+      '</div>'+
+      '<div style="height:8px;background:rgba(0,0,0,.3);border-radius:99px;overflow:hidden;border:1px solid rgba(255,255,255,.06);margin:8px 0"><div style="height:100%;width:'+fvPct+'%;background:linear-gradient(90deg,'+fvCol+'88,'+fvCol+');border-radius:99px"></div></div>'+
+      '<div style="font-size:8.5px;color:rgba(200,232,245,.3);font-family:var(--mono)">'+
+      'Fv/Fm: 0=stressed • 0.65=max efficiency • Oligotrophic ocean typical: 0.45–0.55<br>'+
+      (s.fpe1!==undefined?'Fpe1:'+s.fpe1.toFixed(4)+'  Fpe2:'+s.fpe2.toFixed(4)+'  Fpe3:'+s.fpe3.toFixed(4)+' (phycoerythrin pigments — Synechococcus indicator)':'Phycoerythrin: loading…')+
+      '</div></div>';
+  }
+  document.getElementById('pane-environment').innerHTML = clsPanel + document.getElementById('pane-environment').innerHTML;
+
   _smCharts.scatter = new Chart(document.getElementById('smEnvScatter'),{type:'scatter',data:{datasets:[{label:'Other stations',data:stList3.filter(function(_,i){return i!==castIdx3;}).map(function(st){return {x:st.sst,y:st.fluoro};}),backgroundColor:'rgba(0,255,170,.3)',borderColor:'rgba(0,255,170,.5)',pointRadius:5},{label:'This station',data:[{x:s.sst,y:s.fluoro}],backgroundColor:'#ff6b35',borderColor:'#ff6b35',pointRadius:10,pointStyle:'star'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:8,color:'rgba(200,232,245,.45)'}},tooltip:{..._td,callbacks:{label:function(c){return ' SST:'+c.raw.x+'°C Flu:'+c.raw.y;}}}},scales:{x:{grid:{color:_gc},title:{display:true,text:'SST (°C)',color:'rgba(200,232,245,.3)',font:{size:9}},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}},y:{grid:{color:_gc},title:{display:true,text:'Fluorescence',color:'rgba(200,232,245,.3)',font:{size:9}},ticks:{color:'rgba(200,232,245,.3)',font:{size:8.5}}}}}});
   _smCharts.sal = new Chart(document.getElementById('smSalLine'),{type:'line',data:{labels:stList3.map(function(st){return st.cast.replace('BFZ-Cast','C');}),datasets:[{label:'Salinity (PSU)',data:stList3.map(function(st){return st.sal;}),borderColor:'rgba(96,217,250,.7)',backgroundColor:'rgba(96,217,250,.06)',borderWidth:2,pointRadius:stList3.map(function(_,i){return i===castIdx3?7:3;}),pointBackgroundColor:stList3.map(function(_,i){return i===castIdx3?'#60d9fa':'rgba(96,217,250,.5)';}),tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{..._td,callbacks:{label:function(c){return ' '+c.raw+' PSU';}}}},scales:{x:{grid:{color:_gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:7.5}}},y:{grid:{color:_gc},ticks:{color:'rgba(200,232,245,.3)',font:{size:7.5}},min:34}}}});
 }
