@@ -1639,7 +1639,7 @@ fetch('https://raw.githubusercontent.com/adityaram-2003/phytoplankton-classifica
 
 function wireCruiseData(cd){
   /* A. Chl-colored track on Leaflet */
-  if(typeof map!=='undefined'&&cd.track&&cd.track.length>0){
+  var map=window._leafletMap; if(map&&cd.track&&cd.track.length>0){
     var cv=cd.track.map(function(p){return p.chl||0;}).filter(function(v){return v>0&&v<5;});
     var cMin=Math.min.apply(null,cv)||0.01, cMax=Math.max.apply(null,cv)||0.5;
     function cCol(v){
@@ -2212,6 +2212,7 @@ function runChain(){
   'BFZ-Cast143': {sst:30.14,sal:34.5,fluoro:0.041},
 };
 
+  window._leafletMap = map; // expose for cruise data overlay
   // REAL GPS positions from BLOOFINZ_MET.xlsx underway data
   var casts = [
     [-14.0042, 114.3626, 'BFZ-Cast7', '10m', '#00d4ff', '2022-02-02'],
